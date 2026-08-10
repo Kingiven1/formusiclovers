@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Photos — For Music Lovers</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=General+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --opal:#faf5ef;
+    --blush:#f1d9d3;
+    --jade:#3d6358;
+    --jade-deep:#25392f;
+    --ink:#2a2420;
+    --gold:#c9a668;
+    --rose:#a2555a;
+    --line: rgba(61,99,88,0.2);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--opal);
+    color:var(--ink);
+    font-family:'General Sans', sans-serif;
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:440px;width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    padding:44px 36px;
+  }
+  h1{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.6rem;color:var(--jade-deep);margin-bottom:8px;
+  }
+  p.sub{ color:rgba(42,36,32,0.65); font-size:0.9rem; margin-bottom:28px; line-height:1.5; }
+  label{ display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--rose); margin-bottom:8px; }
+  input[type="password"], input[type="text"]{
+    width:100%; padding:13px 14px; border:1px solid var(--line); background:var(--opal);
+    font-family:'General Sans',sans-serif; font-size:0.95rem; color:var(--ink); margin-bottom:18px;
+  }
+  input[type="password"]:focus, input[type="text"]:focus{ outline:2px solid var(--jade); }
+  button{
+    width:100%; padding:14px; border:1px solid var(--jade); background:var(--jade); color:var(--opal);
+    font-family:'General Sans',sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase;
+    cursor:pointer; transition:background 0.2s;
+  }
+  button:hover{ background:var(--jade-deep); }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .error{ color:var(--rose); font-size:0.85rem; margin-top:12px; display:none; }
+
+  #upload-panel{ display:none; }
+  .drop-zone{
+    border:2px dashed var(--line); padding:40px 20px; text-align:center; margin-bottom:20px;
+    cursor:pointer; transition:border-color 0.2s, background 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.dragover{ border-color:var(--jade); background:var(--blush); }
+  .drop-zone p{ font-size:0.85rem; color:rgba(42,36,32,0.6); }
+  .file-list{ margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+  .file-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:0.82rem; padding:8px 0; border-bottom:1px solid var(--line);
+  }
+  .file-row .status{ font-family:'General Sans',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; }
+  .status.pending{ color:var(--dust,#a2555a); opacity:0.6; }
+  .status.uploading{ color:var(--jade); }
+  .status.done{ color:var(--jade); font-weight:600; }
+  .status.failed{ color:var(--rose); }
+  .success-banner{
+    display:none; background:var(--blush); border:1px solid var(--jade); padding:14px 16px;
+    font-size:0.85rem; margin-top:20px; color:var(--jade-deep);
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="gate-panel">
+    <h1>Upload Photos</h1>
+    <p class="sub">For Music Lovers crew only. Enter the passcode to upload event photos to the gallery.</p>
+    <label for="passcode">Passcode</label>
+    <input type="password" id="passcode" autocomplete="off">
+    <button id="unlock-btn">Unlock</button>
+    <div class="error" id="gate-error">Incorrect passcode — try again.</div>
+  </div>
+
+  <div id="upload-panel">
+    <h1>Upload Photos</h1>
+    <p class="sub">Drop event photos below. They'll appear on the public gallery automatically once uploaded.</p>
+    <div class="drop-zone" id="drop-zone">
+      <p>Drag photos here, or click to choose files</p>
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
+    </div>
+    <div class="file-list" id="file-list"></div>
+    <div class="success-banner" id="success-banner">All done — check the <a href="gallery.html" style="color:var(--jade-deep);">gallery</a> to see them live.</div>
+  </div>
+</div>
+
+<script>
+  // ===== CONFIG =====
+  // Change this passcode to whatever you want your crew to use.
+  const UPLOAD_PASSCODE = "FMLCREW2026";
+
+  const SUPABASE_URL = "https://erxreawwsglhrkisjuai.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd";
+  const BUCKET = "event-photos";
+  // ===================
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const gatePanel = document.getElementById('gate-panel');
+  const uploadPanel = document.getElementById('upload-panel');
+  const passcodeInput = document.getElementById('passcode');
+  const unlockBtn = document.getElementById('unlock-btn');
+  const gateError = document.getElementById('gate-error');
+
+  function tryUnlock(){
+    if(passcodeInput.value === UPLOAD_PASSCODE){
+      gatePanel.style.display = 'none';
+      uploadPanel.style.display = 'block';
+    } else {
+      gateError.style.display = 'block';
+    }
+  }
+  unlockBtn.addEventListener('click', tryUnlock);
+  passcodeInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileList = document.getElementById('file-list');
+  const successBanner = document.getElementById('success-banner');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+  async function handleFiles(fileListInput){
+    const files = Array.from(fileListInput);
+    if(files.length === 0) return;
+
+    const rows = files.map(file => {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = `<span>${file.name}</span><span class="status pending">Pending</span>`;
+      fileList.prepend(row);
+      return { file, row };
+    });
+
+    let successCount = 0;
+
+    for(const { file, row } of rows){
+      const statusEl = row.querySelector('.status');
+      statusEl.textContent = 'Uploading';
+      statusEl.className = 'status uploading';
+      try {
+        const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const { error } = await sb.storage.from(BUCKET).upload(safeName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        if(error) throw error;
+        statusEl.textContent = 'Done';
+        statusEl.className = 'status done';
+        successCount++;
+      } catch(err){
+        statusEl.textContent = 'Failed';
+        statusEl.className = 'status failed';
+        console.error('Upload failed:', err);
+      }
+    }
+
+    if(successCount > 0){
+      successBanner.style.display = 'block';
+    }
+  }
+</script>
+
+</body>
+</html>

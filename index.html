@@ -154,6 +154,41 @@
 
   section{padding:90px 0;position:relative;}
 
+  /* ============ BRAND PHOTO STRIP ============ */
+  .photo-strip{background:var(--opal);padding-top:0;}
+  .photo-strip .strip-head{text-align:center;margin-bottom:36px;}
+  .photo-strip .strip-head h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:clamp(1.6rem,3.5vw,2.2rem);color:var(--jade-deep);margin-top:8px;
+  }
+  .photo-mosaic{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:14px;
+    align-items:start;
+  }
+  .photo-slot{
+    aspect-ratio:3/4;
+    background:var(--blush);
+    border:1px dashed rgba(61,99,88,0.35);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+  .photo-slot:nth-child(even){ margin-top:44px; }
+  .photo-slot img{ width:100%; height:100%; object-fit:cover; display:none; }
+  .photo-slot img[src]:not([src=""]) { display:block; }
+  .photo-slot .placeholder-mark{
+    font-family:'General Sans',sans-serif;
+    font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--rose);opacity:0.55;text-align:center;padding:6px;
+  }
+  @media (max-width:760px){
+    .photo-mosaic{ grid-template-columns:repeat(2,1fr); gap:12px; }
+    .photo-slot:nth-child(even){ margin-top:32px; }
+    .photo-slot:nth-child(3), .photo-slot:nth-child(5){ margin-top:0; }
+  }
+
   /* ============ EXPERIENCE ============ */
   .experience{background:var(--opal);}
   .experience h2{
@@ -274,7 +309,7 @@
   <div class="links">
     <a href="#calendar">Dates</a>
     <a href="#experience">The Experience</a>
-    <a href="#gallery">Photos</a>
+    <a href="gallery.html">Photos</a>
     <a href="#join">Join</a>
   </div>
 </nav>
@@ -347,6 +382,31 @@
   <div class="scroll-hint">Scroll ↓</div>
 </header>
 
+<section class="photo-strip">
+  <div class="wrap">
+    <div class="strip-head">
+      <p class="eyebrow">The Room</p>
+      <h2>What a night with us feels like</h2>
+    </div>
+    <!--
+      PHOTO SWAP INSTRUCTIONS:
+      Drop your event photos into the assets/ folder (e.g. assets/photo-1.jpg),
+      then set the src="" below to the filename. Each <img> is empty on purpose —
+      the dashed box and label disappear automatically once a real src is set.
+      Slots are sized for portrait/tall photos (3:4) with a staggered offset —
+      no need to crop first, object-fit handles it, but portrait originals
+      will look best with the least cropping.
+    -->
+    <div class="photo-mosaic">
+      <div class="photo-slot"><img src="" alt="For Music Lovers event photo"><span class="placeholder-mark">Photo 1</span></div>
+      <div class="photo-slot"><img src="" alt="For Music Lovers event photo"><span class="placeholder-mark">Photo 2</span></div>
+      <div class="photo-slot"><img src="" alt="For Music Lovers event photo"><span class="placeholder-mark">Photo 3</span></div>
+      <div class="photo-slot"><img src="" alt="For Music Lovers event photo"><span class="placeholder-mark">Photo 4</span></div>
+      <div class="photo-slot"><img src="" alt="For Music Lovers event photo"><span class="placeholder-mark">Photo 5</span></div>
+    </div>
+  </div>
+</section>
+
 <div class="deco-divider" aria-hidden="true">
   <div class="rule"></div>
   <div class="diamond-row"><span class="diamond"></span><span class="diamond"></span><span class="diamond"></span></div>
@@ -406,8 +466,8 @@
   <div class="wrap">
     <p class="eyebrow">Relive It</p>
     <h2>Photos from past nights</h2>
-    <p>Our full photo portal is being rebuilt in-house — for now, browse the archive from past Dine &amp; Vibe and Dance Party nights.</p>
-    <a class="btn btn-outline" href="http://formusiclovers.pixieset.com" target="_blank" rel="noopener">View Past Event Photos</a>
+    <p>Browse the archive from past Dine &amp; Vibe and Dance Party nights.</p>
+    <a class="btn btn-outline" href="gallery.html">View Full Gallery</a>
   </div>
 </section>
 
