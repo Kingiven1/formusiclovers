@@ -10,21 +10,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600;1,700&family=General+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#120d0d;
-    --wine:#3a0f1c;
-    --wine-deep:#230910;
-    --champagne:#d8b06a;
-    --champagne-bright:#f0d29a;
-    --cream:#f3e9db;
-    --dust:#8a5a5f;
-    --card:#1c1414;
-    --line: rgba(216,176,106,0.18);
+    --opal:#faf5ef;
+    --blush:#f1d9d3;
+    --blush-deep:#e6c1ba;
+    --jade:#3d6358;
+    --jade-deep:#25392f;
+    --ink:#2a2420;
+    --gold:#c9a668;
+    --gold-bright:#e0be82;
+    --rose:#a2555a;
+    --line: rgba(61,99,88,0.18);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
   body{
-    background:var(--ink);
-    color:var(--cream);
+    background:var(--opal);
+    color:var(--ink);
     font-family:'General Sans', sans-serif;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
@@ -35,11 +36,12 @@
   a{color:inherit;text-decoration:none;}
   img{max-width:100%;display:block;}
   .eyebrow{
-    font-family:'Space Mono',monospace;
-    font-size:0.72rem;
-    letter-spacing:0.22em;
-    text-transform:uppercase;
-    color:var(--champagne);
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:0.85rem;
+    letter-spacing:0.08em;
+    color:var(--rose);
   }
   .wrap{max-width:1120px;margin:0 auto;padding:0 28px;}
 
@@ -47,16 +49,19 @@
   nav{
     position:fixed;top:0;left:0;right:0;z-index:50;
     display:flex;align-items:center;justify-content:space-between;
-    padding:20px 28px;
-    background:linear-gradient(180deg, rgba(18,13,13,0.92), rgba(18,13,13,0));
-    backdrop-filter:blur(6px);
+    padding:18px 28px;
+    background:rgba(250,245,239,0.88);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
   }
-  nav .brand{display:flex;align-items:center;gap:10px;}
-  nav .brand img{height:30px;width:auto;filter:drop-shadow(0 0 8px rgba(216,176,106,0.25));}
-  nav .links{display:flex;gap:28px;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;}
-  nav .links a{opacity:0.85;transition:opacity 0.2s, color 0.2s;}
-  nav .links a:hover{opacity:1;color:var(--champagne);}
-  nav .links a:focus-visible{outline:1px solid var(--champagne);outline-offset:4px;}
+  nav .brand{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.15rem;color:var(--jade-deep);letter-spacing:0.01em;
+  }
+  nav .links{display:flex;gap:30px;font-family:'General Sans',sans-serif;font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;}
+  nav .links a{opacity:0.75;transition:opacity 0.2s, color 0.2s;color:var(--ink);}
+  nav .links a:hover{opacity:1;color:var(--rose);}
+  nav .links a:focus-visible{outline:1px solid var(--rose);outline-offset:4px;}
   @media (max-width:640px){ nav .links{display:none;} }
 
   /* ============ HERO ============ */
@@ -65,130 +70,142 @@
     min-height:100svh;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;
-    padding:120px 24px 80px;
+    padding:130px 24px 70px;
     background:
-      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(58,15,28,0.9), transparent 70%),
-      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(35,9,16,1), var(--ink) 70%),
-      var(--ink);
+      radial-gradient(ellipse 70% 55% at 50% 8%, rgba(241,217,211,0.9), transparent 65%),
+      var(--opal);
+    overflow:hidden;
   }
-  .vinyl{
+  .figure-illustration{
     position:absolute;
-    width:560px;height:560px;
-    right:-180px;top:50%;transform:translateY(-50%);
-    opacity:0.5;
-    animation:spin 26s linear infinite;
+    width:340px;
+    opacity:0.9;
     pointer-events:none;
   }
-  @media (max-width:900px){
-    .vinyl{width:380px;height:380px;right:-140px;opacity:0.35;}
+  .figure-left{ left:2%; bottom:6%; transform:scaleX(-1); }
+  .figure-right{ right:2%; bottom:8%; }
+  @media (max-width:980px){
+    .figure-illustration{ width:180px; opacity:0.5; }
   }
-  @keyframes spin{ to{ transform:translateY(-50%) rotate(360deg); } }
+  @media (max-width:640px){
+    .figure-illustration{ display:none; }
+  }
 
-  .hero-logo{
-    width:min(560px, 78vw);
-    margin:0 auto 18px;
-    filter:drop-shadow(0 0 40px rgba(216,176,106,0.18));
+  .medallion{
+    width:min(300px, 62vw);
+    aspect-ratio:1/1;
+    margin:0 auto 26px;
+    position:relative;
+    z-index:2;
   }
+  .medallion svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .medallion img{
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:64%;
+  }
+
   .hero .tagline{
     font-family:'Playfair Display', serif;
     font-style:italic;
     font-weight:500;
-    font-size:clamp(1.15rem, 2.6vw, 1.6rem);
-    color:var(--champagne-bright);
-    max-width:640px;
+    font-size:clamp(1.1rem, 2.4vw, 1.5rem);
+    color:var(--jade-deep);
+    max-width:600px;
     margin:6px auto 34px;
-    line-height:1.5;
+    line-height:1.55;
+    position:relative;z-index:2;
   }
   .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2;}
   .btn{
-    font-family:'Space Mono',monospace;
-    font-size:0.78rem;
+    font-family:'General Sans',sans-serif;
+    font-size:0.75rem;
     letter-spacing:0.1em;
     text-transform:uppercase;
     padding:15px 30px;
     border-radius:2px;
-    border:1px solid var(--champagne);
+    border:1px solid var(--jade);
     transition:all 0.25s ease;
     display:inline-block;
   }
-  .btn-solid{background:var(--champagne);color:var(--wine-deep);}
-  .btn-solid:hover{background:var(--champagne-bright);transform:translateY(-2px);}
-  .btn-outline{background:transparent;color:var(--champagne-bright);}
-  .btn-outline:hover{background:rgba(216,176,106,0.1);transform:translateY(-2px);}
-  .btn:focus-visible{outline:2px solid var(--champagne-bright);outline-offset:3px;}
+  .btn-solid{background:var(--jade);color:var(--opal);}
+  .btn-solid:hover{background:var(--jade-deep);transform:translateY(-2px);}
+  .btn-outline{background:transparent;color:var(--jade-deep);border-color:var(--jade-deep);}
+  .btn-outline:hover{background:rgba(61,99,88,0.08);transform:translateY(-2px);}
+  .btn:focus-visible{outline:2px solid var(--rose);outline-offset:3px;}
 
   .scroll-hint{
     position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
-    font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;
-    color:var(--dust);text-transform:uppercase;
+    font-family:'General Sans',sans-serif;font-size:0.68rem;letter-spacing:0.2em;
+    color:var(--jade);text-transform:uppercase;opacity:0.6;z-index:2;
   }
 
-  /* ============ SOUNDWAVE DIVIDER ============ */
-  .soundwave{
-    display:flex;align-items:flex-end;justify-content:center;gap:3px;
-    height:34px;margin:0 auto;
-    max-width:1120px;padding:0 28px;
+  /* ============ DECO DIVIDER ============ */
+  .deco-divider{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    padding:36px 0;
   }
-  .soundwave span{
-    display:block;width:2px;background:var(--champagne);opacity:0.35;
-    animation:wave 2.4s ease-in-out infinite;
+  .deco-divider .diamond-row{ display:flex; gap:7px; }
+  .deco-divider .diamond{
+    width:7px;height:7px;background:var(--gold);transform:rotate(45deg);
   }
-  @keyframes wave{
-    0%,100%{transform:scaleY(0.3);}
-    50%{transform:scaleY(1);}
-  }
+  .deco-divider .rule{ width:64px; height:1px; background:var(--line); }
 
   section{padding:90px 0;position:relative;}
 
   /* ============ EXPERIENCE ============ */
-  .experience{background:var(--ink);}
+  .experience{background:var(--opal);}
   .experience h2{
     font-family:'Playfair Display',serif;
     font-style:italic;
     font-weight:600;
-    font-size:clamp(1.8rem,4vw,2.8rem);
+    font-size:clamp(1.8rem,4vw,2.7rem);
     margin:10px 0 26px;
-    color:var(--cream);
+    color:var(--jade-deep);
   }
-  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;}
+  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:40px;}
   @media (max-width:760px){ .exp-grid{grid-template-columns:1fr;} }
   .exp-card{
     border:1px solid var(--line);
-    padding:32px;
-    background:linear-gradient(160deg, rgba(216,176,106,0.05), transparent);
+    padding:36px 32px;
+    background:var(--blush);
+    position:relative;
   }
+  .exp-card.dance{ background:#e4e9dd; }
+  .exp-card svg{ width:42px;height:42px;margin-bottom:18px; }
   .exp-card .tag{
     display:inline-block;
-    font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.15em;
-    text-transform:uppercase;color:var(--wine-deep);
-    background:var(--champagne);
+    font-family:'General Sans',sans-serif;font-size:0.66rem;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--opal);
+    background:var(--rose);
     padding:5px 10px;margin-bottom:16px;
   }
-  .exp-card.dance .tag{background:var(--cream);}
+  .exp-card.dance .tag{ background:var(--jade); }
   .exp-card h3{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:1.5rem;margin-bottom:12px;
+    font-size:1.5rem;margin-bottom:12px;color:var(--ink);
   }
-  .exp-card p{color:rgba(243,233,219,0.72);line-height:1.65;font-size:0.95rem;}
+  .exp-card p{color:rgba(42,36,32,0.72);line-height:1.65;font-size:0.95rem;}
 
   /* ============ CALENDAR ============ */
-  .calendar{background:linear-gradient(180deg, var(--ink), var(--wine-deep) 120%);}
-  .cal-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:44px;}
+  .calendar{background:var(--blush);}
+  .cal-head{margin-bottom:44px;}
   .cal-head h2{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:clamp(1.8rem,4vw,2.8rem);
+    font-size:clamp(1.8rem,4vw,2.7rem);color:var(--jade-deep);
   }
-  .date-list{display:flex;flex-direction:column;border-top:1px solid var(--line);}
+  .date-list{display:flex;flex-direction:column;border-top:1px solid rgba(61,99,88,0.28);}
   .date-card{
     display:grid;
     grid-template-columns:120px 1fr auto;
     align-items:center;
     gap:24px;
     padding:28px 0;
-    border-bottom:1px solid var(--line);
+    border-bottom:1px solid rgba(61,99,88,0.28);
     transition:background 0.25s;
   }
-  .date-card:hover{background:rgba(216,176,106,0.04);}
+  .date-card:hover{background:rgba(61,99,88,0.05);}
   @media (max-width:700px){
     .date-card{grid-template-columns:1fr;gap:12px;padding:24px 0;}
   }
@@ -196,64 +213,64 @@
     font-family:'Space Mono',monospace;
     line-height:1.2;
   }
-  .date-block .day{font-size:2.1rem;color:var(--champagne-bright);}
-  .date-block .month{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--dust);}
+  .date-block .day{font-size:2.1rem;color:var(--jade-deep);}
+  .date-block .month{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);}
   .date-info .type{
     display:inline-block;
-    font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;
+    font-family:'General Sans',sans-serif;font-size:0.63rem;letter-spacing:0.14em;text-transform:uppercase;
     padding:4px 9px;margin-bottom:10px;
-    border:1px solid var(--champagne);color:var(--champagne-bright);
+    border:1px solid var(--jade);color:var(--jade-deep);
   }
   .date-info h3{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:1.4rem;margin-bottom:6px;
+    font-size:1.4rem;margin-bottom:6px;color:var(--ink);
   }
-  .date-info .venue{color:rgba(243,233,219,0.65);font-size:0.9rem;}
+  .date-info .venue{color:rgba(42,36,32,0.65);font-size:0.9rem;}
   .date-card .btn{white-space:nowrap;}
 
   .empty-card{
     padding:44px 0;
     text-align:center;
-    color:rgba(243,233,219,0.5);
-    font-family:'Space Mono',monospace;
+    color:rgba(42,36,32,0.55);
+    font-family:'General Sans',sans-serif;
     font-size:0.85rem;
-    letter-spacing:0.03em;
+    letter-spacing:0.01em;
   }
-  .empty-card a{color:var(--champagne-bright);border-bottom:1px solid var(--champagne);}
+  .empty-card a{color:var(--rose);border-bottom:1px solid var(--rose);}
 
   /* ============ GALLERY BRIDGE ============ */
-  .gallery{background:var(--wine-deep);text-align:center;}
+  .gallery{background:var(--opal);text-align:center;}
   .gallery h2{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:clamp(1.6rem,3.5vw,2.4rem);margin:10px 0 16px;
+    font-size:clamp(1.6rem,3.5vw,2.3rem);margin:10px 0 16px;color:var(--jade-deep);
   }
-  .gallery p{max-width:520px;margin:0 auto 30px;color:rgba(243,233,219,0.7);line-height:1.6;}
+  .gallery p{max-width:520px;margin:0 auto 30px;color:rgba(42,36,32,0.65);line-height:1.6;}
 
   /* ============ FOOTER / RSVP ============ */
   footer{
-    background:var(--ink);
+    background:var(--jade-deep);
+    color:var(--opal);
     padding:80px 0 40px;
     text-align:center;
-    border-top:1px solid var(--line);
   }
-  footer .foot-logo{width:220px;margin:0 auto 22px;opacity:0.9;}
+  footer .foot-logo{width:200px;margin:0 auto 22px;}
   footer h2{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:clamp(1.6rem,3.5vw,2.2rem);margin-bottom:14px;
+    font-size:clamp(1.6rem,3.5vw,2.1rem);margin-bottom:14px;
   }
-  footer p{color:rgba(243,233,219,0.65);max-width:480px;margin:0 auto 28px;line-height:1.6;}
-  .social-row{display:flex;justify-content:center;gap:26px;margin-top:40px;font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;}
+  footer p{color:rgba(250,245,239,0.7);max-width:480px;margin:0 auto 28px;line-height:1.6;}
+  footer .btn-solid{background:var(--gold);color:var(--jade-deep);border-color:var(--gold);}
+  footer .btn-solid:hover{background:var(--gold-bright);}
+  .social-row{display:flex;justify-content:center;gap:26px;margin-top:40px;font-family:'General Sans',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;}
   .social-row a{opacity:0.75;border-bottom:1px solid transparent;transition:opacity 0.2s, border-color 0.2s;}
-  .social-row a:hover{opacity:1;border-color:var(--champagne);}
-  .fine-print{margin-top:50px;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--dust);letter-spacing:0.05em;}
+  .social-row a:hover{opacity:1;border-color:var(--gold);}
+  .fine-print{margin-top:50px;font-family:'Space Mono',monospace;font-size:0.63rem;color:rgba(250,245,239,0.4);letter-spacing:0.05em;}
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="brand">
-    <img src="assets/logo.png" alt="For Music Lovers">
-  </div>
+  <div class="brand">For Music Lovers</div>
   <div class="links">
     <a href="#calendar">Dates</a>
     <a href="#experience">The Experience</a>
@@ -263,17 +280,63 @@
 </nav>
 
 <header class="hero">
-  <svg class="vinyl" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <circle cx="150" cy="150" r="148" fill="#0c0808" stroke="rgba(216,176,106,0.25)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="128" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="88" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="68" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="46" fill="#3a0f1c" stroke="rgba(216,176,106,0.4)" stroke-width="1"/>
-    <circle cx="150" cy="150" r="6" fill="#d8b06a"/>
+
+  <!-- fashion-illustration line art, left figure -->
+  <svg class="figure-illustration figure-left" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M100 40
+             C 88 40 80 52 80 66
+             C 80 78 86 86 96 90
+             C 74 100 60 118 58 145
+             C 56 178 66 198 60 220
+             C 52 248 30 268 34 300
+             C 37 326 58 340 66 366
+             M96 90
+             C 118 96 134 112 138 138
+             C 142 168 128 190 138 214
+             C 148 240 172 256 168 288
+             C 165 314 142 330 136 358
+             M70 150
+             C 90 160 112 160 130 150"
+          fill="none" stroke="#c9a668" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="98" cy="60" r="1.5" fill="#c9a668"/>
   </svg>
 
-  <img class="hero-logo" src="assets/logo.png" alt="For Music Lovers">
+  <!-- fashion-illustration line art, right figure (dancer, arm raised) -->
+  <svg class="figure-illustration figure-right" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M104 36
+             C 92 36 84 48 85 62
+             C 86 74 92 82 102 86
+             C 100 86 132 64 150 40
+             M102 86
+             C 80 96 66 116 66 142
+             C 66 170 82 186 76 212
+             C 70 240 44 258 48 288
+             C 51 312 74 328 82 352
+             M102 86
+             C 122 96 134 116 132 144
+             C 130 172 112 190 120 216
+             C 128 244 156 258 154 288
+             C 152 312 130 330 126 356
+             M70 150 C 92 158 112 158 128 150"
+          fill="none" stroke="#3d6358" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="103" cy="56" r="1.5" fill="#3d6358"/>
+  </svg>
+
+  <div class="medallion">
+    <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="150" cy="150" r="146" fill="#3d6358"/>
+      <circle cx="150" cy="150" r="146" fill="none" stroke="#c9a668" stroke-width="2"/>
+      <circle cx="150" cy="150" r="132" fill="none" stroke="#c9a668" stroke-width="1"/>
+      <g stroke="#c9a668" stroke-width="1.4" fill="none">
+        <path d="M150 4 L156 22 L144 22 Z"/>
+        <path d="M150 296 L156 278 L144 278 Z"/>
+        <path d="M4 150 L22 156 L22 144 Z"/>
+        <path d="M296 150 L278 156 L278 144 Z"/>
+      </g>
+    </svg>
+    <img src="assets/logo.png" alt="For Music Lovers">
+  </div>
+
   <p class="tagline">Dine. Vibe. Party.<br>For our elevated &amp; melanated fam worldwide.</p>
 
   <div class="cta-row">
@@ -284,14 +347,10 @@
   <div class="scroll-hint">Scroll ↓</div>
 </header>
 
-<div class="soundwave" aria-hidden="true">
-  <script>
-    document.write(Array.from({length: 60}).map((_,i)=>{
-      const h = 6 + Math.round(Math.abs(Math.sin(i*0.7))*28);
-      const d = (i*0.045).toFixed(2);
-      return `<span style="height:${h}px;animation-delay:${d}s"></span>`;
-    }).join(''));
-  </script>
+<div class="deco-divider" aria-hidden="true">
+  <div class="rule"></div>
+  <div class="diamond-row"><span class="diamond"></span><span class="diamond"></span><span class="diamond"></span></div>
+  <div class="rule"></div>
 </div>
 
 <section class="experience" id="experience">
@@ -300,11 +359,13 @@
     <h2>One brand, two nights out.</h2>
     <div class="exp-grid">
       <div class="exp-card">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#a2555a" stroke-width="1.6"><path d="M14 6v16a4 4 0 0 0 8 0V6M18 6v14M10 6v10M14 22v20M34 6c-6 4-6 12 0 16v18M34 6v34" stroke-linecap="round"/></svg>
         <span class="tag">Dine &amp; Vibe</span>
         <h3>The dinner party</h3>
         <p>A curated night around the table — great food, a live DJ setting the tone, and a room full of people who came to actually talk to each other before the vibe shifts into the night.</p>
       </div>
       <div class="exp-card dance">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#3d6358" stroke-width="1.6"><path d="M24 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM24 12v14M24 26l-10 14M24 26l10 14M16 18l-8 6M32 18l8 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="tag">Dance Party</span>
         <h3>The dance floor</h3>
         <p>No plates, just the floor. Straight to the part where the DJ takes over and the room moves as one — our full dance party series, same fam energy, all night.</p>
@@ -316,10 +377,8 @@
 <section class="calendar" id="calendar">
   <div class="wrap">
     <div class="cal-head">
-      <div>
-        <p class="eyebrow">The Tour</p>
-        <h2>Where we're pulling up</h2>
-      </div>
+      <p class="eyebrow">The Tour</p>
+      <h2>Where we're pulling up</h2>
     </div>
 
     <div class="date-list">
