@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crew — For Music Lovers</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=General+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --opal:#faf5ef;
+    --blush:#f1d9d3;
+    --jade:#3d6358;
+    --jade-deep:#25392f;
+    --ink:#2a2420;
+    --gold:#c9a668;
+    --rose:#a2555a;
+    --line: rgba(61,99,88,0.2);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--opal); color:var(--ink);
+    font-family:'General Sans', sans-serif; -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px;}
+
+  /* ===== gate ===== */
+  #gate-panel{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .gate-card{ max-width:420px;width:100%; background:#fff; border:1px solid var(--line); padding:44px 36px; }
+  .gate-card h1{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:1.5rem;color:var(--jade-deep);margin-bottom:8px; }
+  .gate-card p{ color:rgba(42,36,32,0.65); font-size:0.9rem; margin-bottom:24px; line-height:1.5; }
+  label{ display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--rose); margin-bottom:8px; }
+  input[type="password"], input[type="text"], input[type="date"]{
+    width:100%; padding:13px 14px; border:1px solid var(--line); background:var(--opal);
+    font-family:'General Sans',sans-serif; font-size:0.95rem; color:var(--ink); margin-bottom:18px;
+  }
+  input:focus{ outline:2px solid var(--jade); }
+  button{
+    padding:14px 20px; border:1px solid var(--jade); background:var(--jade); color:var(--opal);
+    font-family:'General Sans',sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase;
+    cursor:pointer; transition:background 0.2s;
+  }
+  button:hover{ background:var(--jade-deep); }
+  .gate-error{ color:var(--rose); font-size:0.85rem; margin-top:8px; display:none; }
+
+  /* ===== main panel ===== */
+  #crew-panel{ display:none; }
+  header{ padding:56px 0 0; }
+  header h1{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:2rem;color:var(--jade-deep); }
+  header p{ color:rgba(42,36,32,0.6); font-size:0.9rem; margin-top:6px; }
+
+  .tabs{ display:flex; gap:4px; margin:32px 0 40px; border-bottom:1px solid var(--line); }
+  .tab-btn{
+    background:none; border:none; padding:14px 22px;
+    font-family:'General Sans',sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase;
+    color:rgba(42,36,32,0.5); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .tab-btn.active{ color:var(--jade-deep); border-bottom-color:var(--jade); }
+  .tab-panel{ display:none; padding-bottom:100px; }
+  .tab-panel.active{ display:block; }
+
+  /* ===== upload tab ===== */
+  .drop-zone{
+    border:2px dashed var(--line); padding:40px 20px; text-align:center; margin-bottom:20px;
+    cursor:pointer; transition:border-color 0.2s, background 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.dragover{ border-color:var(--jade); background:var(--blush); }
+  .drop-zone p{ font-size:0.85rem; color:rgba(42,36,32,0.6); }
+  .file-list{ margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+  .file-row{ display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; padding:8px 0; border-bottom:1px solid var(--line); }
+  .status.pending{ color:var(--rose); opacity:0.6; font-family:'General Sans',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; }
+  .status.uploading{ color:var(--jade); font-family:'General Sans',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; }
+  .status.done{ color:var(--jade); font-weight:600; font-family:'General Sans',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; }
+  .status.failed{ color:var(--rose); font-family:'General Sans',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; }
+  .success-banner{
+    display:none; background:var(--blush); border:1px solid var(--jade); padding:14px 16px;
+    font-size:0.85rem; margin-top:20px; color:var(--jade-deep);
+  }
+  .field-error{ color:var(--rose); font-size:0.85rem; margin-top:-12px; margin-bottom:16px; display:none; }
+
+  /* ===== manage tab ===== */
+  .manage-back{
+    font-family:'General Sans',sans-serif; font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--rose); cursor:pointer; display:inline-block; margin-bottom:16px;
+  }
+  .event-list{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .event-row{
+    display:flex; align-items:center; gap:20px; padding:20px 0;
+    border-bottom:1px solid var(--line); cursor:pointer; transition:background 0.2s;
+  }
+  .event-row:hover{ background:rgba(61,99,88,0.04); }
+  .event-row .thumb{ width:64px; height:64px; background:var(--blush); overflow:hidden; flex-shrink:0; }
+  .event-row .thumb img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .event-row .info h3{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:1.1rem;color:var(--jade-deep); }
+  .event-row .info .meta{ font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--rose); margin-top:4px; }
+
+  .photo-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+  @media (max-width:700px){ .photo-grid{ grid-template-columns:repeat(2,1fr); } }
+  .photo-tile{ position:relative; aspect-ratio:3/4; overflow:hidden; background:var(--blush); border:3px solid transparent; }
+  .photo-tile.is-cover{ border-color:var(--gold); }
+  .photo-tile img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .photo-tile .cover-badge{
+    position:absolute; top:8px; left:8px; background:var(--gold); color:var(--jade-deep);
+    font-family:'General Sans',sans-serif; font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; padding:4px 8px;
+  }
+  .photo-tile .set-cover-btn{
+    position:absolute; inset:auto 0 0 0; background:rgba(37,57,47,0.88); color:var(--opal);
+    font-family:'General Sans',sans-serif; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase;
+    padding:10px; text-align:center; cursor:pointer; opacity:0; transition:opacity 0.2s; border:none;
+  }
+  .photo-tile:hover .set-cover-btn{ opacity:1; }
+  .photo-tile.is-cover .set-cover-btn{ display:none; }
+
+  .state-msg{ text-align:center; padding:60px 24px; color:rgba(42,36,32,0.55); font-size:0.9rem; }
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--jade-deep); color:var(--opal); padding:12px 22px;
+    font-family:'General Sans',sans-serif; font-size:0.85rem; display:none; z-index:100;
+  }
+</style>
+</head>
+<body>
+
+<div id="gate-panel">
+  <div class="gate-card">
+    <h1>Crew Access</h1>
+    <p>For Music Lovers crew only. Enter the passcode to upload photos and manage galleries.</p>
+    <label for="passcode">Passcode</label>
+    <input type="password" id="passcode" autocomplete="off">
+    <button id="unlock-btn">Unlock</button>
+    <div class="gate-error" id="gate-error">Incorrect passcode — try again.</div>
+  </div>
+</div>
+
+<div id="crew-panel">
+  <div class="wrap">
+    <header>
+      <h1>Crew</h1>
+      <p>Upload event photos or manage which one's featured on each gallery.</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-upload-btn">Upload Photos</button>
+      <button class="tab-btn" id="tab-manage-btn">Manage Galleries</button>
+    </div>
+
+    <!-- ===== UPLOAD TAB ===== -->
+    <div class="tab-panel active" id="tab-upload">
+      <label for="gallery-name">Event Name</label>
+      <input type="text" id="gallery-name" list="name-suggestions" placeholder="e.g. FML: Summer Edit">
+      <datalist id="name-suggestions"></datalist>
+
+      <label for="gallery-city">City</label>
+      <input type="text" id="gallery-city" list="city-suggestions" placeholder="e.g. Charlotte">
+      <datalist id="city-suggestions"></datalist>
+
+      <label for="gallery-date">Event Date</label>
+      <input type="date" id="gallery-date">
+
+      <div class="drop-zone" id="drop-zone" style="margin-top:6px;">
+        <p>Drag photos here, or click to choose files</p>
+        <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
+      </div>
+      <div class="field-error" id="gallery-error">Fill in event name, city, and date before uploading.</div>
+      <div class="file-list" id="file-list"></div>
+      <div class="success-banner" id="success-banner">Uploaded to <span id="success-gallery-name"></span> — switch to "Manage Galleries" to pick a featured cover.</div>
+    </div>
+
+    <!-- ===== MANAGE TAB ===== -->
+    <div class="tab-panel" id="tab-manage">
+      <div class="manage-back" id="manage-back" style="display:none;">← All Galleries</div>
+      <div id="event-list" class="event-list"></div>
+      <div id="photo-grid" class="photo-grid"></div>
+      <div id="state-msg" class="state-msg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = "https://erxreawwsglhrkisjuai.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd";
+  const BUCKET = "event-photos";
+  const CREW_PASSCODE = "FMLCREW2026"; // change this to whatever you want your crew to use
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ===== Passcode gate =====
+  const gatePanel = document.getElementById('gate-panel');
+  const crewPanel = document.getElementById('crew-panel');
+  const passcodeInput = document.getElementById('passcode');
+  const unlockBtn = document.getElementById('unlock-btn');
+  const gateError = document.getElementById('gate-error');
+
+  function tryUnlock(){
+    if(passcodeInput.value === CREW_PASSCODE){
+      gatePanel.style.display = 'none';
+      crewPanel.style.display = 'block';
+      loadExistingGalleries();
+    } else {
+      gateError.style.display = 'block';
+    }
+  }
+  unlockBtn.addEventListener('click', tryUnlock);
+  passcodeInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+
+  // ===== Tabs =====
+  const tabUploadBtn = document.getElementById('tab-upload-btn');
+  const tabManageBtn = document.getElementById('tab-manage-btn');
+  const tabUpload = document.getElementById('tab-upload');
+  const tabManage = document.getElementById('tab-manage');
+
+  tabUploadBtn.addEventListener('click', () => switchTab('upload'));
+  tabManageBtn.addEventListener('click', () => switchTab('manage'));
+
+  function switchTab(name){
+    const isUpload = name === 'upload';
+    tabUploadBtn.classList.toggle('active', isUpload);
+    tabManageBtn.classList.toggle('active', !isUpload);
+    tabUpload.classList.toggle('active', isUpload);
+    tabManage.classList.toggle('active', !isUpload);
+    if(!isUpload) loadEventList();
+  }
+
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  }
+
+  function slugify(name){
+    return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function labelize(slug){
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  function parseFolderName(folderName){
+    const [date, citySlug, ...nameParts] = folderName.split('__');
+    const nameSlug = nameParts.join('__');
+    if(!citySlug || !nameSlug){ return { date: '', city: '', name: labelize(folderName) }; }
+    return { date, city: labelize(citySlug), name: labelize(nameSlug) };
+  }
+  function formatDate(isoDate){
+    if(!isoDate) return '';
+    const d = new Date(isoDate + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // ============ UPLOAD TAB LOGIC ============
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileList = document.getElementById('file-list');
+  const successBanner = document.getElementById('success-banner');
+  const successGalleryName = document.getElementById('success-gallery-name');
+  const galleryNameInput = document.getElementById('gallery-name');
+  const galleryCityInput = document.getElementById('gallery-city');
+  const galleryDateInput = document.getElementById('gallery-date');
+  const nameSuggestions = document.getElementById('name-suggestions');
+  const citySuggestions = document.getElementById('city-suggestions');
+  const galleryError = document.getElementById('gallery-error');
+
+  async function loadExistingGalleries(){
+    const { data, error } = await sb.storage.from(BUCKET).list('', { limit: 100 });
+    if(error || !data) return;
+    const folders = data.filter(item => item.id === null);
+    const seenNames = new Set();
+    const seenCities = new Set();
+    folders.forEach(folder => {
+      const parsed = parseFolderName(folder.name);
+      if(parsed.name && !seenNames.has(parsed.name)){
+        seenNames.add(parsed.name);
+        const opt = document.createElement('option');
+        opt.value = parsed.name;
+        nameSuggestions.appendChild(opt);
+      }
+      if(parsed.city && !seenCities.has(parsed.city)){
+        seenCities.add(parsed.city);
+        const opt = document.createElement('option');
+        opt.value = parsed.city;
+        citySuggestions.appendChild(opt);
+      }
+    });
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+  async function handleFiles(fileListInput){
+    const files = Array.from(fileListInput);
+    if(files.length === 0) return;
+
+    const nameRaw = galleryNameInput.value.trim();
+    const cityRaw = galleryCityInput.value.trim();
+    const dateRaw = galleryDateInput.value;
+
+    if(!nameRaw || !cityRaw || !dateRaw){
+      galleryError.style.display = 'block';
+      fileInput.value = '';
+      return;
+    }
+    galleryError.style.display = 'none';
+
+    const gallerySlug = `${dateRaw}__${slugify(cityRaw)}__${slugify(nameRaw)}`;
+
+    const rows = files.map(file => {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = `<span>${file.name}</span><span class="status pending">Pending</span>`;
+      fileList.prepend(row);
+      return { file, row };
+    });
+
+    let successCount = 0;
+    for(const { file, row } of rows){
+      const statusEl = row.querySelector('.status');
+      statusEl.textContent = 'Uploading';
+      statusEl.className = 'status uploading';
+      try {
+        const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const path = `${gallerySlug}/${safeName}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+        if(error) throw error;
+        statusEl.textContent = 'Done';
+        statusEl.className = 'status done';
+        successCount++;
+      } catch(err){
+        statusEl.textContent = 'Failed';
+        statusEl.className = 'status failed';
+        console.error('Upload failed:', err);
+      }
+    }
+
+    if(successCount > 0){
+      successGalleryName.textContent = `${nameRaw} — ${cityRaw}`;
+      successBanner.style.display = 'block';
+    }
+  }
+
+  // ============ MANAGE TAB LOGIC ============
+  const manageBack = document.getElementById('manage-back');
+  const eventList = document.getElementById('event-list');
+  const photoGrid = document.getElementById('photo-grid');
+  const stateMsg = document.getElementById('state-msg');
+
+  async function loadEventList(){
+    eventList.style.display = 'flex';
+    photoGrid.style.display = 'none';
+    manageBack.style.display = 'none';
+    stateMsg.textContent = '';
+    eventList.innerHTML = '';
+
+    const { data, error } = await sb.storage.from(BUCKET).list('', { limit: 100 });
+    if(error){ stateMsg.textContent = "Couldn't load galleries right now — try again shortly."; return; }
+    const folders = (data || []).filter(item => item.id === null);
+    if(folders.length === 0){ stateMsg.textContent = "No galleries yet — upload some photos first."; return; }
+
+    for(const folder of folders){
+      const parsed = parseFolderName(folder.name);
+      const { data: files } = await sb.storage.from(BUCKET).list(folder.name, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+      const coverFile = files && files.length > 0 ? files[0] : null;
+      const thumbUrl = coverFile ? sb.storage.from(BUCKET).getPublicUrl(`${folder.name}/${coverFile.name}`).data.publicUrl : null;
+
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.innerHTML = `
+        <div class="thumb">${thumbUrl ? `<img src="${thumbUrl}" alt="">` : ''}</div>
+        <div class="info">
+          <h3>${parsed.name}</h3>
+          <div class="meta">${[formatDate(parsed.date), parsed.city].filter(Boolean).join(' · ')}</div>
+        </div>
+      `;
+      row.addEventListener('click', () => loadPhotoPicker(folder.name, parsed));
+      eventList.appendChild(row);
+    }
+  }
+
+  async function loadPhotoPicker(slug, parsed){
+    eventList.style.display = 'none';
+    photoGrid.style.display = 'grid';
+    manageBack.style.display = 'inline-block';
+    manageBack.onclick = loadEventList;
+    stateMsg.textContent = '';
+    photoGrid.innerHTML = '';
+
+    const { data, error } = await sb.storage.from(BUCKET).list(slug, { limit: 200, sortBy: { column: 'created_at', order: 'desc' } });
+    if(error){ stateMsg.textContent = "Couldn't load this gallery's photos right now."; return; }
+    const files = (data || []).filter(f => f.id !== null);
+    if(files.length === 0){ stateMsg.textContent = "No photos in this gallery yet."; return; }
+
+    files.forEach(file => {
+      const isCover = file.name.toLowerCase().startsWith('cover-');
+      const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
+
+      const tile = document.createElement('div');
+      tile.className = 'photo-tile' + (isCover ? ' is-cover' : '');
+      tile.innerHTML = `
+        <img src="${url}" alt="">
+        ${isCover ? '<span class="cover-badge">Featured</span>' : ''}
+        <button class="set-cover-btn">Set as Cover</button>
+      `;
+      tile.querySelector('.set-cover-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await setCover(slug, file.name, files);
+        loadPhotoPicker(slug, parsed);
+      });
+      photoGrid.appendChild(tile);
+    });
+  }
+
+  async function setCover(slug, newCoverName, allFiles){
+    try {
+      const currentCover = allFiles.find(f => f.name.toLowerCase().startsWith('cover-'));
+      if(currentCover && currentCover.name !== newCoverName){
+        const strippedName = currentCover.name.replace(/^cover-/i, '');
+        await sb.storage.from(BUCKET).move(`${slug}/${currentCover.name}`, `${slug}/${strippedName}`);
+      }
+      if(!newCoverName.toLowerCase().startsWith('cover-')){
+        await sb.storage.from(BUCKET).move(`${slug}/${newCoverName}`, `${slug}/cover-${newCoverName}`);
+      }
+      showToast('Cover photo updated');
+    } catch(err){
+      console.error(err);
+      showToast('Something went wrong — try again');
+    }
+  }
+</script>
+
+</body>
+</html>
