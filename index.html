@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Music Lovers — Dine. Vibe. Party.</title>
+<meta name="description" content="For Music Lovers — Dine & Vibe dinner parties and Dance Party nights for our elevated & melanated fam worldwide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600;1,700&family=General+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#120d0d;
+    --wine:#3a0f1c;
+    --wine-deep:#230910;
+    --champagne:#d8b06a;
+    --champagne-bright:#f0d29a;
+    --cream:#f3e9db;
+    --dust:#8a5a5f;
+    --card:#1c1414;
+    --line: rgba(216,176,106,0.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--cream);
+    font-family:'General Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:0.72rem;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--champagne);
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px;}
+
+  /* ============ NAV ============ */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 28px;
+    background:linear-gradient(180deg, rgba(18,13,13,0.92), rgba(18,13,13,0));
+    backdrop-filter:blur(6px);
+  }
+  nav .brand{display:flex;align-items:center;gap:10px;}
+  nav .brand img{height:30px;width:auto;filter:drop-shadow(0 0 8px rgba(216,176,106,0.25));}
+  nav .links{display:flex;gap:28px;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;}
+  nav .links a{opacity:0.85;transition:opacity 0.2s, color 0.2s;}
+  nav .links a:hover{opacity:1;color:var(--champagne);}
+  nav .links a:focus-visible{outline:1px solid var(--champagne);outline-offset:4px;}
+  @media (max-width:640px){ nav .links{display:none;} }
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    min-height:100svh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+    padding:120px 24px 80px;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(58,15,28,0.9), transparent 70%),
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(35,9,16,1), var(--ink) 70%),
+      var(--ink);
+  }
+  .vinyl{
+    position:absolute;
+    width:560px;height:560px;
+    right:-180px;top:50%;transform:translateY(-50%);
+    opacity:0.5;
+    animation:spin 26s linear infinite;
+    pointer-events:none;
+  }
+  @media (max-width:900px){
+    .vinyl{width:380px;height:380px;right:-140px;opacity:0.35;}
+  }
+  @keyframes spin{ to{ transform:translateY(-50%) rotate(360deg); } }
+
+  .hero-logo{
+    width:min(560px, 78vw);
+    margin:0 auto 18px;
+    filter:drop-shadow(0 0 40px rgba(216,176,106,0.18));
+  }
+  .hero .tagline{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(1.15rem, 2.6vw, 1.6rem);
+    color:var(--champagne-bright);
+    max-width:640px;
+    margin:6px auto 34px;
+    line-height:1.5;
+  }
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2;}
+  .btn{
+    font-family:'Space Mono',monospace;
+    font-size:0.78rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:15px 30px;
+    border-radius:2px;
+    border:1px solid var(--champagne);
+    transition:all 0.25s ease;
+    display:inline-block;
+  }
+  .btn-solid{background:var(--champagne);color:var(--wine-deep);}
+  .btn-solid:hover{background:var(--champagne-bright);transform:translateY(-2px);}
+  .btn-outline{background:transparent;color:var(--champagne-bright);}
+  .btn-outline:hover{background:rgba(216,176,106,0.1);transform:translateY(-2px);}
+  .btn:focus-visible{outline:2px solid var(--champagne-bright);outline-offset:3px;}
+
+  .scroll-hint{
+    position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+    font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;
+    color:var(--dust);text-transform:uppercase;
+  }
+
+  /* ============ SOUNDWAVE DIVIDER ============ */
+  .soundwave{
+    display:flex;align-items:flex-end;justify-content:center;gap:3px;
+    height:34px;margin:0 auto;
+    max-width:1120px;padding:0 28px;
+  }
+  .soundwave span{
+    display:block;width:2px;background:var(--champagne);opacity:0.35;
+    animation:wave 2.4s ease-in-out infinite;
+  }
+  @keyframes wave{
+    0%,100%{transform:scaleY(0.3);}
+    50%{transform:scaleY(1);}
+  }
+
+  section{padding:90px 0;position:relative;}
+
+  /* ============ EXPERIENCE ============ */
+  .experience{background:var(--ink);}
+  .experience h2{
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:clamp(1.8rem,4vw,2.8rem);
+    margin:10px 0 26px;
+    color:var(--cream);
+  }
+  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;}
+  @media (max-width:760px){ .exp-grid{grid-template-columns:1fr;} }
+  .exp-card{
+    border:1px solid var(--line);
+    padding:32px;
+    background:linear-gradient(160deg, rgba(216,176,106,0.05), transparent);
+  }
+  .exp-card .tag{
+    display:inline-block;
+    font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.15em;
+    text-transform:uppercase;color:var(--wine-deep);
+    background:var(--champagne);
+    padding:5px 10px;margin-bottom:16px;
+  }
+  .exp-card.dance .tag{background:var(--cream);}
+  .exp-card h3{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.5rem;margin-bottom:12px;
+  }
+  .exp-card p{color:rgba(243,233,219,0.72);line-height:1.65;font-size:0.95rem;}
+
+  /* ============ CALENDAR ============ */
+  .calendar{background:linear-gradient(180deg, var(--ink), var(--wine-deep) 120%);}
+  .cal-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:44px;}
+  .cal-head h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:clamp(1.8rem,4vw,2.8rem);
+  }
+  .date-list{display:flex;flex-direction:column;border-top:1px solid var(--line);}
+  .date-card{
+    display:grid;
+    grid-template-columns:120px 1fr auto;
+    align-items:center;
+    gap:24px;
+    padding:28px 0;
+    border-bottom:1px solid var(--line);
+    transition:background 0.25s;
+  }
+  .date-card:hover{background:rgba(216,176,106,0.04);}
+  @media (max-width:700px){
+    .date-card{grid-template-columns:1fr;gap:12px;padding:24px 0;}
+  }
+  .date-block{
+    font-family:'Space Mono',monospace;
+    line-height:1.2;
+  }
+  .date-block .day{font-size:2.1rem;color:var(--champagne-bright);}
+  .date-block .month{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--dust);}
+  .date-info .type{
+    display:inline-block;
+    font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;
+    padding:4px 9px;margin-bottom:10px;
+    border:1px solid var(--champagne);color:var(--champagne-bright);
+  }
+  .date-info h3{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.4rem;margin-bottom:6px;
+  }
+  .date-info .venue{color:rgba(243,233,219,0.65);font-size:0.9rem;}
+  .date-card .btn{white-space:nowrap;}
+
+  .empty-card{
+    padding:44px 0;
+    text-align:center;
+    color:rgba(243,233,219,0.5);
+    font-family:'Space Mono',monospace;
+    font-size:0.85rem;
+    letter-spacing:0.03em;
+  }
+  .empty-card a{color:var(--champagne-bright);border-bottom:1px solid var(--champagne);}
+
+  /* ============ GALLERY BRIDGE ============ */
+  .gallery{background:var(--wine-deep);text-align:center;}
+  .gallery h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:clamp(1.6rem,3.5vw,2.4rem);margin:10px 0 16px;
+  }
+  .gallery p{max-width:520px;margin:0 auto 30px;color:rgba(243,233,219,0.7);line-height:1.6;}
+
+  /* ============ FOOTER / RSVP ============ */
+  footer{
+    background:var(--ink);
+    padding:80px 0 40px;
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
+  footer .foot-logo{width:220px;margin:0 auto 22px;opacity:0.9;}
+  footer h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:clamp(1.6rem,3.5vw,2.2rem);margin-bottom:14px;
+  }
+  footer p{color:rgba(243,233,219,0.65);max-width:480px;margin:0 auto 28px;line-height:1.6;}
+  .social-row{display:flex;justify-content:center;gap:26px;margin-top:40px;font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;}
+  .social-row a{opacity:0.75;border-bottom:1px solid transparent;transition:opacity 0.2s, border-color 0.2s;}
+  .social-row a:hover{opacity:1;border-color:var(--champagne);}
+  .fine-print{margin-top:50px;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--dust);letter-spacing:0.05em;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <img src="assets/logo.png" alt="For Music Lovers">
+  </div>
+  <div class="links">
+    <a href="#calendar">Dates</a>
+    <a href="#experience">The Experience</a>
+    <a href="#gallery">Photos</a>
+    <a href="#join">Join</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <svg class="vinyl" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="150" cy="150" r="148" fill="#0c0808" stroke="rgba(216,176,106,0.25)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="128" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="108" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="88" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="68" fill="none" stroke="rgba(216,176,106,0.12)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="46" fill="#3a0f1c" stroke="rgba(216,176,106,0.4)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="6" fill="#d8b06a"/>
+  </svg>
+
+  <img class="hero-logo" src="assets/logo.png" alt="For Music Lovers">
+  <p class="tagline">Dine. Vibe. Party.<br>For our elevated &amp; melanated fam worldwide.</p>
+
+  <div class="cta-row">
+    <a class="btn btn-solid" href="#calendar">See Upcoming Dates</a>
+    <a class="btn btn-outline" href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">Join VIP List</a>
+  </div>
+
+  <div class="scroll-hint">Scroll ↓</div>
+</header>
+
+<div class="soundwave" aria-hidden="true">
+  <script>
+    document.write(Array.from({length: 60}).map((_,i)=>{
+      const h = 6 + Math.round(Math.abs(Math.sin(i*0.7))*28);
+      const d = (i*0.045).toFixed(2);
+      return `<span style="height:${h}px;animation-delay:${d}s"></span>`;
+    }).join(''));
+  </script>
+</div>
+
+<section class="experience" id="experience">
+  <div class="wrap">
+    <p class="eyebrow">Two Ways In</p>
+    <h2>One brand, two nights out.</h2>
+    <div class="exp-grid">
+      <div class="exp-card">
+        <span class="tag">Dine &amp; Vibe</span>
+        <h3>The dinner party</h3>
+        <p>A curated night around the table — great food, a live DJ setting the tone, and a room full of people who came to actually talk to each other before the vibe shifts into the night.</p>
+      </div>
+      <div class="exp-card dance">
+        <span class="tag">Dance Party</span>
+        <h3>The dance floor</h3>
+        <p>No plates, just the floor. Straight to the part where the DJ takes over and the room moves as one — our full dance party series, same fam energy, all night.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="calendar" id="calendar">
+  <div class="wrap">
+    <div class="cal-head">
+      <div>
+        <p class="eyebrow">The Tour</p>
+        <h2>Where we're pulling up</h2>
+      </div>
+    </div>
+
+    <div class="date-list">
+      <div class="date-card">
+        <div class="date-block">
+          <div class="day">28</div>
+          <div class="month">Aug 2026</div>
+        </div>
+        <div class="date-info">
+          <span class="type">Dine &amp; Vibe</span>
+          <h3>FML: Summer Edit</h3>
+          <div class="venue">Taco Boy LoSo — 3700 South Blvd, Charlotte, NC</div>
+        </div>
+        <a class="btn btn-solid" href="https://posh.vip/e/for-music-lovers-summer-edit" target="_blank" rel="noopener">Get Tickets</a>
+      </div>
+
+      <div class="empty-card">
+        More dates dropping soon — <a href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">join the VIP list</a> to hear first.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="gallery" id="gallery">
+  <div class="wrap">
+    <p class="eyebrow">Relive It</p>
+    <h2>Photos from past nights</h2>
+    <p>Our full photo portal is being rebuilt in-house — for now, browse the archive from past Dine &amp; Vibe and Dance Party nights.</p>
+    <a class="btn btn-outline" href="http://formusiclovers.pixieset.com" target="_blank" rel="noopener">View Past Event Photos</a>
+  </div>
+</section>
+
+<footer id="join">
+  <div class="wrap">
+    <img class="foot-logo" src="assets/logo.png" alt="For Music Lovers">
+    <h2>Don't miss the next one.</h2>
+    <p>Get on the VIP list for first access to tickets, new city announcements, and the occasional surprise.</p>
+    <a class="btn btn-solid" href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">Join the VIP List</a>
+
+    <div class="social-row">
+      <a href="https://www.instagram.com/thisisformusiclovers" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://www.tiktok.com/@thisis.formusiclovers" target="_blank" rel="noopener">TikTok</a>
+    </div>
+
+    <div class="fine-print">FOR MUSIC LOVERS · DINE. VIBE. PARTY.</div>
+  </div>
+</footer>
+
+</body>
+</html>
