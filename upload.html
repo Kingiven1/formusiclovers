@@ -54,6 +54,7 @@
   button:hover{ background:var(--jade-deep); }
   button:disabled{ opacity:0.5; cursor:not-allowed; }
   .error{ color:var(--rose); font-size:0.85rem; margin-top:12px; display:none; }
+  #gallery-error{ margin-top:-12px; margin-bottom:16px; }
 
   #upload-panel{ display:none; }
   .drop-zone{
@@ -92,13 +93,26 @@
 
   <div id="upload-panel">
     <h1>Upload Photos</h1>
-    <p class="sub">Drop event photos below. They'll appear on the public gallery automatically once uploaded.</p>
-    <div class="drop-zone" id="drop-zone">
+    <p class="sub">Fill in the event details, then drop your photos below. They'll be grouped into their own gallery automatically.</p>
+
+    <label for="gallery-name">Event Name</label>
+    <input type="text" id="gallery-name" list="name-suggestions" placeholder="e.g. FML: Summer Edit">
+    <datalist id="name-suggestions"></datalist>
+
+    <label for="gallery-city">City</label>
+    <input type="text" id="gallery-city" list="city-suggestions" placeholder="e.g. Charlotte">
+    <datalist id="city-suggestions"></datalist>
+
+    <label for="gallery-date">Event Date</label>
+    <input type="date" id="gallery-date">
+
+    <div class="drop-zone" id="drop-zone" style="margin-top:6px;">
       <p>Drag photos here, or click to choose files</p>
       <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
     </div>
+    <div class="error" id="gallery-error">Fill in event name, city, and date before uploading.</div>
     <div class="file-list" id="file-list"></div>
-    <div class="success-banner" id="success-banner">All done — check the <a href="gallery.html" style="color:var(--jade-deep);">gallery</a> to see them live.</div>
+    <div class="success-banner" id="success-banner">Uploaded to <span id="success-gallery-name"></span> — check the <a href="gallery.html" style="color:var(--jade-deep);">gallery</a> to see them live.</div>
   </div>
 </div>
 
@@ -135,6 +149,53 @@
   const fileInput = document.getElementById('file-input');
   const fileList = document.getElementById('file-list');
   const successBanner = document.getElementById('success-banner');
+  const successGalleryName = document.getElementById('success-gallery-name');
+  const galleryNameInput = document.getElementById('gallery-name');
+  const galleryCityInput = document.getElementById('gallery-city');
+  const galleryDateInput = document.getElementById('gallery-date');
+  const nameSuggestions = document.getElementById('name-suggestions');
+  const citySuggestions = document.getElementById('city-suggestions');
+  const galleryError = document.getElementById('gallery-error');
+
+  function slugify(name){
+    return name.trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  // Folder format: YYYY-MM-DD__city-slug__event-name-slug
+  // Double underscore separates the three fields so they can be split back apart reliably.
+  function parseFolderName(folderName){
+    const [date, citySlug, ...nameParts] = folderName.split('__');
+    const nameSlug = nameParts.join('__');
+    return { date: date || '', citySlug: citySlug || '', nameSlug: nameSlug || folderName };
+  }
+
+  async function loadExistingGalleries(){
+    const { data, error } = await sb.storage.from(BUCKET).list('', { limit: 100 });
+    if(error || !data) return;
+    const folders = data.filter(item => item.id === null);
+    const seenNames = new Set();
+    const seenCities = new Set();
+    folders.forEach(folder => {
+      const { citySlug, nameSlug } = parseFolderName(folder.name);
+      const nameLabel = nameSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const cityLabel = citySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      if(nameLabel && !seenNames.has(nameLabel)){
+        seenNames.add(nameLabel);
+        const opt = document.createElement('option');
+        opt.value = nameLabel;
+        nameSuggestions.appendChild(opt);
+      }
+      if(cityLabel && !seenCities.has(cityLabel)){
+        seenCities.add(cityLabel);
+        const opt = document.createElement('option');
+        opt.value = cityLabel;
+        citySuggestions.appendChild(opt);
+      }
+    });
+  }
+  loadExistingGalleries();
 
   dropZone.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -149,6 +210,19 @@
   async function handleFiles(fileListInput){
     const files = Array.from(fileListInput);
     if(files.length === 0) return;
+
+    const nameRaw = galleryNameInput.value.trim();
+    const cityRaw = galleryCityInput.value.trim();
+    const dateRaw = galleryDateInput.value; // already YYYY-MM-DD from <input type="date">
+
+    if(!nameRaw || !cityRaw || !dateRaw){
+      galleryError.style.display = 'block';
+      fileInput.value = '';
+      return;
+    }
+    galleryError.style.display = 'none';
+
+    const gallerySlug = `${dateRaw}__${slugify(cityRaw)}__${slugify(nameRaw)}`;
 
     const rows = files.map(file => {
       const row = document.createElement('div');
@@ -166,7 +240,8 @@
       statusEl.className = 'status uploading';
       try {
         const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
-        const { error } = await sb.storage.from(BUCKET).upload(safeName, file, {
+        const path = `${gallerySlug}/${safeName}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, file, {
           cacheControl: '3600',
           upsert: false
         });
@@ -182,6 +257,7 @@
     }
 
     if(successCount > 0){
+      successGalleryName.textContent = `${nameRaw} — ${cityRaw}`;
       successBanner.style.display = 'block';
     }
   }

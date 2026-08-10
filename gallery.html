@@ -80,9 +80,55 @@
   }
   .g-item:hover img{ transform:scale(1.04); }
 
+  /* event/gallery picker cards */
+  .event-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
+  }
+  @media (max-width:760px){ .event-grid{ grid-template-columns:1fr; } }
+  .event-card{
+    cursor:pointer; border:1px solid var(--line); background:#fff;
+    transition:transform 0.2s, box-shadow 0.2s;
+  }
+  .event-card:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(37,57,47,0.1); }
+  .event-card .cover{
+    aspect-ratio:4/3; background:var(--blush); overflow:hidden;
+  }
+  .event-card .cover img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .event-card .cover.empty{ display:flex;align-items:center;justify-content:center; color:var(--rose); font-family:'Playfair Display',serif; font-style:italic; }
+  .event-card .label{
+    padding:16px 18px;
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.05rem; color:var(--jade-deep);
+  }
+  .event-card .meta{
+    padding:0 18px 16px;
+    font-family:'Space Mono',monospace; font-size:0.72rem; letter-spacing:0.05em;
+    color:var(--rose); text-transform:uppercase;
+  }
+  .city-filters{
+    display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;
+  }
+  .city-pill{
+    font-family:'General Sans',sans-serif; font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase;
+    padding:8px 16px; border:1px solid var(--jade); color:var(--jade-deep);
+    cursor:pointer; background:transparent; transition:background 0.2s, color 0.2s;
+  }
+  .city-pill.active{ background:var(--jade); color:var(--opal); }
+  .city-pill:hover{ background:rgba(61,99,88,0.1); }
+  .city-pill.active:hover{ background:var(--jade-deep); }
+  .back-link{
+    display:inline-block; margin-bottom:24px;
+    font-family:'General Sans',sans-serif; font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--rose); cursor:pointer;
+  }
+  #event-grid, #gallery-grid{ display:none; }
+
   .state-msg{
     text-align:center; padding:80px 24px; color:rgba(42,36,32,0.55);
     font-family:'General Sans',sans-serif; font-size:0.9rem;
+    display:none;
   }
   .state-msg.error{ color:var(--rose); }
 
@@ -110,11 +156,14 @@
 
 <header class="hero">
   <p class="eyebrow">Relive It</p>
-  <h1>Photos</h1>
-  <p>Moments from past Dine &amp; Vibe and Dance Party nights.</p>
+  <h1 id="page-title">Photos</h1>
+  <p id="page-sub">Moments from past Dine &amp; Vibe and Dance Party nights.</p>
 </header>
 
 <main class="wrap">
+  <div id="back-link" class="back-link" style="display:none;">← All Galleries</div>
+  <div id="city-filters" class="city-filters"></div>
+  <div id="event-grid" class="event-grid"></div>
   <div id="gallery-grid" class="gallery-grid"></div>
   <div id="state-msg" class="state-msg"></div>
 </main>
@@ -131,7 +180,12 @@
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const grid = document.getElementById('gallery-grid');
+  const pageTitle = document.getElementById('page-title');
+  const pageSub = document.getElementById('page-sub');
+  const backLink = document.getElementById('back-link');
+  const cityFilters = document.getElementById('city-filters');
+  const eventGrid = document.getElementById('event-grid');
+  const galleryGrid = document.getElementById('gallery-grid');
   const stateMsg = document.getElementById('state-msg');
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
@@ -140,29 +194,173 @@
   lightboxClose.addEventListener('click', () => lightbox.classList.remove('open'));
   lightbox.addEventListener('click', e => { if(e.target === lightbox) lightbox.classList.remove('open'); });
 
-  async function loadGallery(){
-    const { data, error } = await sb.storage.from(BUCKET).list('', {
-      limit: 200,
-      sortBy: { column: 'created_at', order: 'desc' }
-    });
+  function labelize(slug){
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
 
+  // Folder format: YYYY-MM-DD__city-slug__event-name-slug
+  function parseFolderName(folderName){
+    const [date, citySlug, ...nameParts] = folderName.split('__');
+    const nameSlug = nameParts.join('__');
+    // Fallback for any older folders created before city/date existed
+    if(!citySlug || !nameSlug){
+      return { date: '', city: '', name: labelize(folderName), raw: folderName };
+    }
+    return { date, city: labelize(citySlug), name: labelize(nameSlug), raw: folderName };
+  }
+
+  function formatDate(isoDate){
+    if(!isoDate) return '';
+    const d = new Date(isoDate + 'T00:00:00');
+    if(isNaN(d)) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function getEventParam(){
+    return new URLSearchParams(window.location.search).get('event');
+  }
+
+  function showEvent(slug){
+    window.location.href = `gallery.html?event=${encodeURIComponent(slug)}`;
+  }
+
+  let allEvents = [];
+  let activeCity = 'all';
+
+  function renderEventGrid(){
+    eventGrid.innerHTML = '';
+    const filtered = activeCity === 'all'
+      ? allEvents
+      : allEvents.filter(ev => ev.city === activeCity);
+
+    if(filtered.length === 0){
+      stateMsg.textContent = "No galleries for that city yet.";
+      stateMsg.style.display = 'block';
+      return;
+    }
+    stateMsg.style.display = 'none';
+
+    filtered.forEach(ev => {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.innerHTML = `
+        <div class="cover ${ev.cover ? '' : 'empty'}">
+          ${ev.cover ? `<img src="${ev.cover}" alt="${ev.name}" loading="lazy">` : 'No photos yet'}
+        </div>
+        <div class="label">${ev.name}</div>
+        <div class="meta">${[formatDate(ev.date), ev.city].filter(Boolean).join(' · ')}</div>
+      `;
+      card.addEventListener('click', () => showEvent(ev.raw));
+      eventGrid.appendChild(card);
+    });
+  }
+
+  function renderCityFilters(){
+    const cities = Array.from(new Set(allEvents.map(ev => ev.city).filter(Boolean))).sort();
+    if(cities.length <= 1){
+      cityFilters.style.display = 'none';
+      return;
+    }
+    cityFilters.innerHTML = '';
+    const allPill = document.createElement('button');
+    allPill.className = 'city-pill active';
+    allPill.textContent = 'All Cities';
+    allPill.addEventListener('click', () => setActiveCity('all', allPill));
+    cityFilters.appendChild(allPill);
+
+    cities.forEach(city => {
+      const pill = document.createElement('button');
+      pill.className = 'city-pill';
+      pill.textContent = city;
+      pill.addEventListener('click', () => setActiveCity(city, pill));
+      cityFilters.appendChild(pill);
+    });
+  }
+
+  function setActiveCity(city, clickedPill){
+    activeCity = city;
+    cityFilters.querySelectorAll('.city-pill').forEach(p => p.classList.remove('active'));
+    clickedPill.classList.add('active');
+    renderEventGrid();
+  }
+
+  async function loadEventList(){
+    eventGrid.style.display = 'grid';
+    galleryGrid.style.display = 'none';
+    backLink.style.display = 'none';
+    pageTitle.textContent = 'Photos';
+    pageSub.textContent = 'Pick a night to relive it.';
+
+    const { data, error } = await sb.storage.from(BUCKET).list('', { limit: 100 });
     if(error){
-      stateMsg.textContent = "Couldn't load photos right now — try again shortly.";
+      stateMsg.textContent = "Couldn't load galleries right now — try again shortly.";
       stateMsg.classList.add('error');
+      stateMsg.style.display = 'block';
       return;
     }
 
-    const images = (data || []).filter(f => f.name && !f.name.startsWith('.'));
+    const folders = (data || []).filter(item => item.id === null);
+    if(folders.length === 0){
+      stateMsg.textContent = "No galleries yet — check back after the next event.";
+      stateMsg.style.display = 'block';
+      return;
+    }
 
+    const events = [];
+    for(const folder of folders){
+      const parsed = parseFolderName(folder.name);
+      const { data: files } = await sb.storage.from(BUCKET).list(folder.name, {
+        limit: 1, sortBy: { column: 'created_at', order: 'desc' }
+      });
+      const cover = files && files.length > 0
+        ? sb.storage.from(BUCKET).getPublicUrl(`${folder.name}/${files[0].name}`).data.publicUrl
+        : null;
+      events.push({ ...parsed, cover });
+    }
+
+    // Newest first; folders without a valid date sort to the end
+    events.sort((a, b) => {
+      if(!a.date) return 1;
+      if(!b.date) return -1;
+      return b.date.localeCompare(a.date);
+    });
+
+    allEvents = events;
+    renderCityFilters();
+    renderEventGrid();
+  }
+
+  async function loadEventPhotos(slug){
+    eventGrid.style.display = 'none';
+    galleryGrid.style.display = 'grid';
+    cityFilters.style.display = 'none';
+    backLink.style.display = 'inline-block';
+    backLink.addEventListener('click', () => { window.location.href = 'gallery.html'; });
+
+    const parsed = parseFolderName(slug);
+    pageTitle.textContent = parsed.name;
+    pageSub.textContent = [formatDate(parsed.date), parsed.city].filter(Boolean).join(' · ') || 'Tap a photo to enlarge it.';
+
+    const { data, error } = await sb.storage.from(BUCKET).list(slug, {
+      limit: 200, sortBy: { column: 'created_at', order: 'desc' }
+    });
+
+    if(error){
+      stateMsg.textContent = "Couldn't load this gallery right now — try again shortly.";
+      stateMsg.classList.add('error');
+      stateMsg.style.display = 'block';
+      return;
+    }
+
+    const images = (data || []).filter(f => f.id !== null);
     if(images.length === 0){
-      stateMsg.textContent = "No photos yet — check back after the next event.";
+      stateMsg.textContent = "No photos in this gallery yet.";
+      stateMsg.style.display = 'block';
       return;
     }
 
     images.forEach(file => {
-      const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(file.name);
-      const url = urlData.publicUrl;
-
+      const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
       const item = document.createElement('div');
       item.className = 'g-item';
       const img = document.createElement('img');
@@ -174,11 +372,16 @@
         lightbox.classList.add('open');
       });
       item.appendChild(img);
-      grid.appendChild(item);
+      galleryGrid.appendChild(item);
     });
   }
 
-  loadGallery();
+  const eventSlug = getEventParam();
+  if(eventSlug){
+    loadEventPhotos(eventSlug);
+  } else {
+    loadEventList();
+  }
 </script>
 
 </body>
