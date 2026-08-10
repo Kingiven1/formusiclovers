@@ -76,6 +76,37 @@
   nav .links a:focus-visible{outline:1px solid var(--rose);outline-offset:4px;}
   @media (max-width:640px){ nav .links{display:none;} }
 
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    background:none;border:none;cursor:pointer;padding:6px;
+  }
+  .nav-toggle span{
+    display:block; width:22px; height:2px; background:var(--jade-deep);
+    transition:transform 0.25s ease, opacity 0.25s ease;
+  }
+  .nav-toggle.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+  .nav-toggle.open span:nth-child(2){ opacity:0; }
+  .nav-toggle.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+  @media (max-width:640px){ .nav-toggle{ display:flex; } }
+
+  .mobile-menu{
+    position:fixed; top:64px; left:0; right:0; z-index:49;
+    background:var(--opal);
+    border-bottom:1px solid var(--line);
+    display:flex; flex-direction:column;
+    max-height:0; overflow:hidden;
+    transition:max-height 0.3s ease;
+  }
+  .mobile-menu.open{ max-height:300px; }
+  .mobile-menu a{
+    padding:16px 28px;
+    font-family:'General Sans',sans-serif;font-size:0.85rem;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--ink); border-bottom:1px solid var(--line);
+  }
+  .mobile-menu a:hover{ color:var(--rose); }
+
   /* ============ HERO ============ */
   .hero{
     position:relative;
@@ -332,7 +363,16 @@
     <a href="gallery.html">Photos</a>
     <a href="#join">Join</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#calendar">Dates</a>
+  <a href="#experience">The Experience</a>
+  <a href="gallery.html">Photos</a>
+  <a href="#join">Join</a>
+</div>
 
 <header class="hero">
 
@@ -507,5 +547,27 @@
   </div>
 </footer>
 
+
+<script>
+  // Always start at the top on load/refresh instead of restoring scroll position
+  if('scrollRestoration' in history){ history.scrollRestoration = 'manual'; }
+  window.scrollTo(0, 0);
+
+  // Mobile hamburger menu
+  const navToggle = document.getElementById('nav-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  navToggle.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    navToggle.classList.toggle('open', isOpen);
+    navToggle.setAttribute('aria-expanded', isOpen);
+  });
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      navToggle.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+</script>
 </body>
 </html>
