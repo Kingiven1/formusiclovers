@@ -171,14 +171,22 @@
     aspect-ratio:3/4;
     background:var(--blush);
     border:1px dashed rgba(61,99,88,0.35);
-    display:flex;align-items:center;justify-content:center;
     overflow:hidden;
     position:relative;
   }
   .photo-slot:nth-child(even){ margin-top:44px; }
-  .photo-slot img{ width:100%; height:100%; object-fit:cover; display:none; }
+  .photo-slot img{
+    position:absolute; inset:0;
+    width:100%; height:100%; object-fit:cover;
+    display:none;
+  }
   .photo-slot img[src]:not([src=""]) { display:block; }
+  .photo-slot img[src]:not([src=""]) ~ .placeholder-mark { display:none; }
+  .photo-slot img[src]:not([src=""]) { border:none; }
+  .photo-slot:has(img[src]:not([src=""])) { border-style:solid; border-color:transparent; }
   .photo-slot .placeholder-mark{
+    position:absolute; inset:0;
+    display:flex;align-items:center;justify-content:center;
     font-family:'General Sans',sans-serif;
     font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;
     color:var(--rose);opacity:0.55;text-align:center;padding:6px;
