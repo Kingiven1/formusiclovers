@@ -369,6 +369,47 @@
   .social-row a{opacity:0.75;border-bottom:1px solid transparent;transition:opacity 0.2s, border-color 0.2s;}
   .social-row a:hover{opacity:1;border-color:var(--gold);}
   .fine-print{margin-top:50px;font-family:'Space Mono',monospace;font-size:0.63rem;color:rgba(250,245,239,0.4);letter-spacing:0.05em;}
+
+  /* ============ SIGNUP FORM ============ */
+  .signup-form{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-width:380px;
+    margin:0 auto 8px;
+    text-align:left;
+  }
+  .signup-form input{
+    padding:14px 16px;
+    border:1px solid rgba(250,245,239,0.3);
+    background:rgba(250,245,239,0.06);
+    color:var(--opal);
+    font-family:'General Sans',sans-serif;
+    font-size:0.9rem;
+  }
+  .signup-form input::placeholder{ color:rgba(250,245,239,0.5); }
+  .signup-form input:focus{ outline:1px solid var(--gold); }
+  .signup-form button{
+    font-family:'General Sans',sans-serif;
+    font-size:0.75rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:15px 30px;
+    border-radius:2px;
+    border:1px solid var(--gold);
+    background:var(--gold);
+    color:var(--jade-deep);
+    cursor:pointer;
+    transition:all 0.25s ease;
+  }
+  .signup-form button:hover{ background:var(--gold-bright); }
+  .signup-message{
+    font-family:'General Sans',sans-serif;
+    font-size:0.8rem;
+    color:var(--gold-bright);
+    min-height:18px;
+    margin-top:4px;
+  }
 </style>
 </head>
 <body>
@@ -553,8 +594,15 @@
   <div class="wrap">
     <img class="foot-logo" src="assets/logo.png" alt="For Music Lovers">
     <h2>Don't miss the next one.</h2>
-    <p>Get on the VIP list for first access to tickets, new city announcements, and the occasional surprise.</p>
-    <a class="btn btn-solid" href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">Join the VIP List</a>
+    <p>Get on the list for first access to tickets, new city announcements, and the occasional surprise.</p>
+
+    <form id="signup-form" class="signup-form">
+      <input type="email" id="signup-email" placeholder="Email" required>
+      <input type="tel" id="signup-phone" placeholder="Phone (optional)">
+      <input type="text" id="signup-city" placeholder="Your city" required>
+      <button type="submit">Get Early Access</button>
+    </form>
+    <p id="signup-message" class="signup-message"></p>
 
     <div class="social-row">
       <a href="https://www.instagram.com/thisisformusiclovers" target="_blank" rel="noopener">Instagram</a>
@@ -581,6 +629,37 @@
       navToggle.classList.remove('open');
       navToggle.setAttribute('aria-expanded', 'false');
     });
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = window.supabase.createClient(
+    'https://erxreawwsglhrkisjuai.supabase.co',
+    'sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd' // <-- swap this for the same anon key used in gallery.html / crew.html
+  );
+
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('signup-email').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const city = document.getElementById('signup-city').value.trim();
+    const messageEl = document.getElementById('signup-message');
+
+    const { error } = await supabase.from('subscribers').insert([
+      { email, phone: phone || null, city }
+    ]);
+
+    if (error) {
+      messageEl.textContent = error.code === '23505'
+        ? "You're already on the list."
+        : "Something went wrong — try again.";
+    } else {
+      messageEl.textContent = "You're in. Watch for early access.";
+      document.getElementById('signup-form').reset();
+      if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+    }
   });
 </script>
 </body>
