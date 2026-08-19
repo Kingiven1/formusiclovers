@@ -410,9 +410,70 @@
     min-height:18px;
     margin-top:4px;
   }
+
+  /* ============ SIGNUP POPUP ============ */
+  .popup-overlay{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(37,57,47,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.3s ease;
+  }
+  .popup-overlay.visible{ opacity:1; pointer-events:auto; }
+  .popup-card{
+    position:relative;
+    background:var(--jade-deep);
+    color:var(--opal);
+    max-width:420px; width:100%;
+    padding:44px 36px 36px;
+    text-align:center;
+    border:1px solid var(--gold);
+    transform:translateY(14px);
+    transition:transform 0.3s ease;
+  }
+  .popup-overlay.visible .popup-card{ transform:translateY(0); }
+  .popup-close{
+    position:absolute; top:14px; right:16px;
+    background:none; border:none; cursor:pointer;
+    color:rgba(250,245,239,0.6);
+    font-size:1.3rem; line-height:1;
+    padding:6px;
+    transition:color 0.2s;
+  }
+  .popup-close:hover{ color:var(--opal); }
+  .popup-card .eyebrow{ color:var(--gold-bright); }
+  .popup-card h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.6rem;margin:10px 0 10px;
+  }
+  .popup-card p{
+    color:rgba(250,245,239,0.75);
+    font-size:0.9rem;
+    line-height:1.55;
+    margin-bottom:24px;
+  }
+  .popup-card .signup-form{ max-width:none; }
 </style>
 </head>
 <body>
+
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup-card">
+    <button class="popup-close" id="popup-close" aria-label="Close">×</button>
+    <p class="eyebrow">Don't Miss It</p>
+    <h2>Get early access to tickets</h2>
+    <p>Join the list and be first to know when we land in your city.</p>
+
+    <form id="popup-form" class="signup-form">
+      <input type="email" id="popup-email" placeholder="Email" required>
+      <input type="tel" id="popup-phone" placeholder="Phone (optional)">
+      <input type="text" id="popup-city" placeholder="Your city" required>
+      <button type="submit">Get Early Access</button>
+    </form>
+    <p id="popup-message" class="signup-message"></p>
+  </div>
+</div>
 
 <nav>
   <div class="brand">For Music Lovers</div>
