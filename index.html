@@ -788,7 +788,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const supabase = window.supabase.createClient(
+  const sb = window.supabase.createClient(
     'https://erxreawwsglhrkisjuai.supabase.co',
     'sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd' // <-- swap this for the same anon key used in gallery.html / crew.html
   );
@@ -811,7 +811,7 @@
     const featuredContainer = document.getElementById('featured-event-container');
     const dateListContainer = document.getElementById('date-list-container');
 
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('events')
       .select('*')
       .gte('event_date', new Date().toISOString().split('T')[0]) // only today/future
@@ -887,7 +887,7 @@
     const city = document.getElementById(`${prefix}-city`).value.trim();
     const messageEl = document.getElementById(`${prefix}-message`);
 
-    const { error } = await supabase.from('subscribers').insert([
+    const { error } = await sb.from('subscribers').insert([
       { email, phone: phone || null, city }
     ]);
 
