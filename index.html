@@ -535,8 +535,21 @@
   /* ============ DATE CARD FLYER THUMBNAIL ============ */
   .date-card{ grid-template-columns:72px 120px 1fr auto; }
   @media (max-width:700px){
-    .date-card{ grid-template-columns:64px 1fr; }
-    .date-card .btn{ grid-column:1 / -1; }
+    .date-card{
+      display:grid;
+      grid-template-columns:64px 1fr;
+      grid-template-areas:
+        "flyer date"
+        "info  info"
+        "btn   btn";
+      column-gap:16px;
+      row-gap:10px;
+      align-items:start;
+    }
+    .date-card .date-flyer{ grid-area:flyer; }
+    .date-card .date-block{ grid-area:date; align-self:center; }
+    .date-card .date-info{ grid-area:info; }
+    .date-card .btn{ grid-area:btn; text-align:center; }
   }
   .date-flyer{
     width:72px; aspect-ratio:3/4;
