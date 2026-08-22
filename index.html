@@ -454,6 +454,102 @@
     margin-bottom:24px;
   }
   .popup-card .signup-form{ max-width:none; }
+
+  /* ============ FEATURED EVENT (NEXT UP) ============ */
+  .featured-event{ background:var(--opal); padding-top:0; }
+  .featured-event .strip-head{ text-align:center; margin-bottom:34px; }
+  .featured-event .strip-head h2{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:clamp(1.6rem,3.5vw,2.2rem);color:var(--jade-deep);margin-top:8px;
+  }
+  .featured-flyer-link{
+    display:block;
+    max-width:420px;
+    margin:0 auto;
+    position:relative;
+    border:1px solid var(--line);
+    overflow:hidden;
+    transition:transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .featured-flyer-link:hover{
+    transform:translateY(-4px);
+    box-shadow:0 20px 40px rgba(37,57,47,0.18);
+  }
+  .featured-flyer{
+    aspect-ratio:4/5;
+    background:var(--blush);
+    border:1px dashed rgba(61,99,88,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  .featured-flyer img{
+    position:absolute; inset:0;
+    width:100%; height:100%; object-fit:cover;
+    display:none;
+  }
+  .featured-flyer img[src]:not([src=""]) { display:block; }
+  .featured-flyer img[src]:not([src=""]) ~ .placeholder-mark { display:none; }
+  .featured-flyer:has(img[src]:not([src=""])) { border-style:solid; border-color:transparent; }
+  .featured-flyer .placeholder-mark{
+    position:absolute; inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'General Sans',sans-serif;
+    font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--rose);opacity:0.55;text-align:center;padding:6px;
+  }
+  .featured-flyer-caption{
+    position:absolute; left:0; right:0; bottom:0;
+    padding:20px 20px 18px;
+    background:linear-gradient(to top, rgba(37,57,47,0.92), transparent);
+    color:var(--opal);
+    text-align:left;
+  }
+  .featured-flyer-caption .type{
+    display:inline-block;
+    font-family:'General Sans',sans-serif;font-size:0.63rem;letter-spacing:0.14em;text-transform:uppercase;
+    padding:4px 9px;margin-bottom:8px;
+    border:1px solid var(--gold);color:var(--gold-bright);
+  }
+  .featured-flyer-caption h3{
+    font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
+    font-size:1.3rem;margin-bottom:4px;
+  }
+  .featured-flyer-caption .venue{ font-size:0.82rem; color:rgba(250,245,239,0.75); }
+  .featured-tap-hint{
+    text-align:center;
+    margin-top:16px;
+    font-family:'Space Mono',monospace;
+    font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--jade);opacity:0.65;
+  }
+
+  /* ============ DATE CARD FLYER THUMBNAIL ============ */
+  .date-card{ grid-template-columns:72px 120px 1fr auto; }
+  @media (max-width:700px){
+    .date-card{ grid-template-columns:64px 1fr; }
+    .date-card .btn{ grid-column:1 / -1; }
+  }
+  .date-flyer{
+    width:72px; aspect-ratio:3/4;
+    background:var(--blush);
+    border:1px dashed rgba(61,99,88,0.35);
+    position:relative; overflow:hidden;
+  }
+  .date-flyer img{
+    position:absolute; inset:0;
+    width:100%; height:100%; object-fit:cover;
+    display:none;
+  }
+  .date-flyer img[src]:not([src=""]) { display:block; }
+  .date-flyer img[src]:not([src=""]) ~ .placeholder-mark { display:none; }
+  .date-flyer:has(img[src]:not([src=""])) { border-style:solid; border-color:transparent; }
+  .date-flyer .placeholder-mark{
+    position:absolute; inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'General Sans',sans-serif;
+    font-size:0.55rem;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--rose);opacity:0.55;text-align:center;padding:3px;
+  }
 </style>
 </head>
 <body>
@@ -562,6 +658,18 @@
   <div class="scroll-hint">Scroll ↓</div>
 </header>
 
+<section class="featured-event">
+  <div class="wrap">
+    <div class="strip-head">
+      <p class="eyebrow">Next Up</p>
+      <h2>Don't sleep on this one</h2>
+    </div>
+    <div id="featured-event-container">
+      <!-- filled dynamically from Supabase — see script at bottom of page -->
+    </div>
+  </div>
+</section>
+
 <section class="photo-strip">
   <div class="wrap">
     <div class="strip-head">
@@ -621,23 +729,8 @@
       <h2>Where we're pulling up</h2>
     </div>
 
-    <div class="date-list">
-      <div class="date-card">
-        <div class="date-block">
-          <div class="day">28</div>
-          <div class="month">Aug 2026</div>
-        </div>
-        <div class="date-info">
-          <span class="type">Dine &amp; Vibe</span>
-          <h3>FML: Summer Edit</h3>
-          <div class="venue">Taco Boy LoSo — 3700 South Blvd, Charlotte, NC</div>
-        </div>
-        <a class="btn btn-solid" href="https://posh.vip/e/for-music-lovers-summer-edit" target="_blank" rel="noopener">Get Tickets</a>
-      </div>
-
-      <div class="empty-card">
-        More dates dropping soon — <a href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">join the VIP list</a> to hear first.
-      </div>
+    <div class="date-list" id="date-list-container">
+      <!-- filled dynamically from Supabase — see script at bottom of page -->
     </div>
   </div>
 </section>
@@ -700,13 +793,12 @@
     'sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd' // <-- swap this for the same anon key used in gallery.html / crew.html
   );
 
-  document.getElementById('signup-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const email = document.getElementById('signup-email').value.trim();
-    const phone = document.getElementById('signup-phone').value.trim();
-    const city = document.getElementById('signup-city').value.trim();
-    const messageEl = document.getElementById('signup-message');
+  // Shared submit handler for both the footer form and the popup form
+  async function handleSignupSubmit(prefix) {
+    const email = document.getElementById(`${prefix}-email`).value.trim();
+    const phone = document.getElementById(`${prefix}-phone`).value.trim();
+    const city = document.getElementById(`${prefix}-city`).value.trim();
+    const messageEl = document.getElementById(`${prefix}-message`);
 
     const { error } = await supabase.from('subscribers').insert([
       { email, phone: phone || null, city }
@@ -716,10 +808,57 @@
       messageEl.textContent = error.code === '23505'
         ? "You're already on the list."
         : "Something went wrong — try again.";
+      return false;
     } else {
       messageEl.textContent = "You're in. Watch for early access.";
-      document.getElementById('signup-form').reset();
+      document.getElementById(`${prefix}-form`).reset();
       if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+      localStorage.setItem('fml_subscribed', 'true');
+      return true;
+    }
+  }
+
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await handleSignupSubmit('signup');
+  });
+
+  document.getElementById('popup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const success = await handleSignupSubmit('popup');
+    if (success) {
+      setTimeout(closePopup, 1400); // let them see the confirmation, then close
+    }
+  });
+
+  // ---- Popup show / dismiss logic ----
+  const popupOverlay = document.getElementById('popup-overlay');
+  const popupClose = document.getElementById('popup-close');
+
+  function closePopup() {
+    popupOverlay.classList.remove('visible');
+  }
+
+  function shouldShowPopup() {
+    return !localStorage.getItem('fml_subscribed') && !localStorage.getItem('fml_popup_dismissed');
+  }
+
+  if (shouldShowPopup()) {
+    setTimeout(() => {
+      if (shouldShowPopup()) popupOverlay.classList.add('visible');
+    }, 8000); // wait 8s so it doesn't hit people the instant the page loads
+  }
+
+  popupClose.addEventListener('click', () => {
+    localStorage.setItem('fml_popup_dismissed', 'true');
+    closePopup();
+  });
+
+  popupOverlay.addEventListener('click', (e) => {
+    // clicking the dark backdrop also dismisses it, same as the × button
+    if (e.target === popupOverlay) {
+      localStorage.setItem('fml_popup_dismissed', 'true');
+      closePopup();
     }
   });
 </script>

@@ -35,7 +35,7 @@
   .gate-card h1{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:1.5rem;color:var(--jade-deep);margin-bottom:8px; }
   .gate-card p{ color:rgba(42,36,32,0.65); font-size:0.9rem; margin-bottom:24px; line-height:1.5; }
   label{ display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--rose); margin-bottom:8px; }
-  input[type="password"], input[type="text"], input[type="date"]{
+  input[type="password"], input[type="text"], input[type="date"], input[type="url"]{
     width:100%; padding:13px 14px; border:1px solid var(--line); background:var(--opal);
     font-family:'General Sans',sans-serif; font-size:0.95rem; color:var(--ink); margin-bottom:18px;
   }
@@ -54,7 +54,7 @@
   header h1{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:2rem;color:var(--jade-deep); }
   header p{ color:rgba(42,36,32,0.6); font-size:0.9rem; margin-top:6px; }
 
-  .tabs{ display:flex; gap:4px; margin:32px 0 40px; border-bottom:1px solid var(--line); }
+  .tabs{ display:flex; gap:4px; margin:32px 0 40px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   .tab-btn{
     background:none; border:none; padding:14px 22px;
     font-family:'General Sans',sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase;
@@ -122,6 +122,54 @@
     background:var(--jade-deep); color:var(--opal); padding:12px 22px;
     font-family:'General Sans',sans-serif; font-size:0.85rem; display:none; z-index:100;
   }
+
+  /* ===== schedule tab ===== */
+  .schedule-form{ max-width:520px; margin-bottom:56px; }
+  .type-row{ display:flex; gap:24px; margin-bottom:20px; }
+  .check-row{ display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .check-row input[type="checkbox"]{ width:19px; height:19px; accent-color:var(--jade); cursor:pointer; }
+  .check-row label{ margin:0; font-size:0.85rem; letter-spacing:0; text-transform:none; color:var(--ink); cursor:pointer; }
+  .type-check{ display:flex; align-items:center; gap:8px; }
+  .type-check input[type="checkbox"]{ width:19px; height:19px; accent-color:var(--jade); cursor:pointer; }
+  .type-check label{ margin:0; font-size:0.85rem; letter-spacing:0; text-transform:none; color:var(--ink); cursor:pointer; }
+  .flyer-drop{
+    border:2px dashed var(--line); padding:28px 20px; text-align:center; margin-bottom:20px;
+    cursor:pointer; transition:border-color 0.2s, background 0.2s; position:relative;
+  }
+  .flyer-drop:hover, .flyer-drop.dragover{ border-color:var(--jade); background:var(--blush); }
+  .flyer-drop p{ font-size:0.85rem; color:rgba(42,36,32,0.6); }
+  .flyer-preview{ max-width:140px; margin:0 auto 12px; display:none; }
+  .flyer-preview img{ width:100%; display:block; border:1px solid var(--line); }
+  .save-event-btn{ margin-top:4px; }
+  .schedule-success{
+    display:none; background:var(--blush); border:1px solid var(--jade); padding:14px 16px;
+    font-size:0.85rem; margin-top:20px; color:var(--jade-deep);
+  }
+
+  .sched-row{
+    display:flex; align-items:center; gap:18px; padding:18px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .sched-row .thumb{ width:52px; height:68px; background:var(--blush); overflow:hidden; flex-shrink:0; border:1px solid var(--line); }
+  .sched-row .thumb img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .sched-row .info{ flex:1; min-width:0; }
+  .sched-row .info h3{ font-family:'Playfair Display',serif;font-style:italic;font-weight:600;font-size:1.05rem;color:var(--jade-deep); }
+  .sched-row .info .meta{ font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--rose); margin-top:4px; }
+  .sched-badges{ display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .sched-badge{
+    font-family:'General Sans',sans-serif; font-size:0.6rem; letter-spacing:0.06em; text-transform:uppercase;
+    padding:3px 8px; border:1px solid var(--line); color:rgba(42,36,32,0.6);
+  }
+  .sched-badge.featured{ background:var(--gold); color:var(--jade-deep); border-color:var(--gold); }
+  .sched-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .sched-actions button{
+    background:none; border:1px solid var(--line); color:var(--ink);
+    padding:8px 12px; font-size:0.68rem;
+  }
+  .sched-actions button:hover{ background:var(--blush); }
+  .sched-actions .feature-btn{ border-color:var(--gold); color:var(--jade-deep); }
+  .sched-actions .delete-btn{ border-color:var(--rose); color:var(--rose); }
+  .sched-actions .delete-btn:hover{ background:var(--rose); color:var(--opal); }
 </style>
 </head>
 <body>
@@ -141,12 +189,13 @@
   <div class="wrap">
     <header>
       <h1>Crew</h1>
-      <p>Upload event photos or manage which one's featured on each gallery.</p>
+      <p>Upload event photos, manage galleries, or add a new date to the schedule.</p>
     </header>
 
     <div class="tabs">
       <button class="tab-btn active" id="tab-upload-btn">Upload Photos</button>
       <button class="tab-btn" id="tab-manage-btn">Manage Galleries</button>
+      <button class="tab-btn" id="tab-schedule-btn">Schedule</button>
     </div>
 
     <!-- ===== UPLOAD TAB ===== -->
@@ -178,6 +227,54 @@
       <div id="photo-grid" class="photo-grid"></div>
       <div id="state-msg" class="state-msg"></div>
     </div>
+
+    <!-- ===== SCHEDULE TAB ===== -->
+    <div class="tab-panel" id="tab-schedule">
+      <div class="schedule-form">
+        <label for="sched-name">Event Name</label>
+        <input type="text" id="sched-name" placeholder="e.g. FML: Summer Edit">
+
+        <label for="sched-date">Date</label>
+        <input type="date" id="sched-date">
+
+        <label for="sched-venue">Venue &amp; City</label>
+        <input type="text" id="sched-venue" placeholder="e.g. Taco Boy LoSo — Charlotte, NC">
+
+        <label>Event Type</label>
+        <div class="type-row">
+          <div class="type-check">
+            <input type="checkbox" id="sched-type-dine">
+            <label for="sched-type-dine">Dine &amp; Vibe</label>
+          </div>
+          <div class="type-check">
+            <input type="checkbox" id="sched-type-dance">
+            <label for="sched-type-dance">Dance Party</label>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="sched-featured">
+          <label for="sched-featured">Feature this event on the homepage</label>
+        </div>
+
+        <label for="sched-ticket-link">Ticket Link (Posh URL)</label>
+        <input type="url" id="sched-ticket-link" placeholder="https://posh.vip/e/...">
+
+        <label>Flyer</label>
+        <div class="flyer-drop" id="flyer-drop">
+          <div class="flyer-preview" id="flyer-preview"><img id="flyer-preview-img" src="" alt=""></div>
+          <p id="flyer-drop-text">Drag the flyer here, or click to choose a file</p>
+          <input type="file" id="flyer-input" accept="image/*" style="display:none;">
+        </div>
+
+        <div class="field-error" id="sched-error">Fill in event name, date, venue, and select a type before saving.</div>
+        <button class="save-event-btn" id="save-event-btn">Save Event</button>
+        <div class="schedule-success" id="schedule-success">Event added to the schedule.</div>
+      </div>
+
+      <div id="sched-list"></div>
+      <div id="sched-state-msg" class="state-msg"></div>
+    </div>
   </div>
 </div>
 
@@ -187,6 +284,7 @@
   const SUPABASE_URL = "https://erxreawwsglhrkisjuai.supabase.co";
   const SUPABASE_KEY = "sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd";
   const BUCKET = "event-photos";
+  const FLYER_BUCKET = "event-flyers";
   const CREW_PASSCODE = "FMLCREW2026"; // change this to whatever you want your crew to use
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -213,19 +311,24 @@
   // ===== Tabs =====
   const tabUploadBtn = document.getElementById('tab-upload-btn');
   const tabManageBtn = document.getElementById('tab-manage-btn');
+  const tabScheduleBtn = document.getElementById('tab-schedule-btn');
   const tabUpload = document.getElementById('tab-upload');
   const tabManage = document.getElementById('tab-manage');
+  const tabSchedule = document.getElementById('tab-schedule');
 
   tabUploadBtn.addEventListener('click', () => switchTab('upload'));
   tabManageBtn.addEventListener('click', () => switchTab('manage'));
+  tabScheduleBtn.addEventListener('click', () => switchTab('schedule'));
 
   function switchTab(name){
-    const isUpload = name === 'upload';
-    tabUploadBtn.classList.toggle('active', isUpload);
-    tabManageBtn.classList.toggle('active', !isUpload);
-    tabUpload.classList.toggle('active', isUpload);
-    tabManage.classList.toggle('active', !isUpload);
-    if(!isUpload) loadEventList();
+    tabUploadBtn.classList.toggle('active', name === 'upload');
+    tabManageBtn.classList.toggle('active', name === 'manage');
+    tabScheduleBtn.classList.toggle('active', name === 'schedule');
+    tabUpload.classList.toggle('active', name === 'upload');
+    tabManage.classList.toggle('active', name === 'manage');
+    tabSchedule.classList.toggle('active', name === 'schedule');
+    if(name === 'manage') loadEventList();
+    if(name === 'schedule') loadScheduleList();
   }
 
   function showToast(msg){
@@ -437,6 +540,166 @@
       console.error(err);
       showToast('Something went wrong — try again');
     }
+  }
+
+  // ============ SCHEDULE TAB LOGIC ============
+  const schedNameInput = document.getElementById('sched-name');
+  const schedDateInput = document.getElementById('sched-date');
+  const schedVenueInput = document.getElementById('sched-venue');
+  const schedTypeDine = document.getElementById('sched-type-dine');
+  const schedTypeDance = document.getElementById('sched-type-dance');
+  const schedFeatured = document.getElementById('sched-featured');
+  const schedTicketLink = document.getElementById('sched-ticket-link');
+  const flyerDrop = document.getElementById('flyer-drop');
+  const flyerInput = document.getElementById('flyer-input');
+  const flyerPreview = document.getElementById('flyer-preview');
+  const flyerPreviewImg = document.getElementById('flyer-preview-img');
+  const flyerDropText = document.getElementById('flyer-drop-text');
+  const schedError = document.getElementById('sched-error');
+  const saveEventBtn = document.getElementById('save-event-btn');
+  const scheduleSuccess = document.getElementById('schedule-success');
+  const schedList = document.getElementById('sched-list');
+  const schedStateMsg = document.getElementById('sched-state-msg');
+
+  let selectedFlyerFile = null;
+
+  // Keep the two type checkboxes mutually exclusive
+  schedTypeDine.addEventListener('change', () => { if(schedTypeDine.checked) schedTypeDance.checked = false; });
+  schedTypeDance.addEventListener('change', () => { if(schedTypeDance.checked) schedTypeDine.checked = false; });
+
+  flyerDrop.addEventListener('click', () => flyerInput.click());
+  flyerDrop.addEventListener('dragover', e => { e.preventDefault(); flyerDrop.classList.add('dragover'); });
+  flyerDrop.addEventListener('dragleave', () => flyerDrop.classList.remove('dragover'));
+  flyerDrop.addEventListener('drop', e => {
+    e.preventDefault();
+    flyerDrop.classList.remove('dragover');
+    if(e.dataTransfer.files[0]) setFlyerFile(e.dataTransfer.files[0]);
+  });
+  flyerInput.addEventListener('change', () => { if(flyerInput.files[0]) setFlyerFile(flyerInput.files[0]); });
+
+  function setFlyerFile(file){
+    selectedFlyerFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      flyerPreviewImg.src = e.target.result;
+      flyerPreview.style.display = 'block';
+      flyerDropText.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  saveEventBtn.addEventListener('click', async () => {
+    const eventName = schedNameInput.value.trim();
+    const eventDate = schedDateInput.value;
+    const venue = schedVenueInput.value.trim();
+    const ticketLink = schedTicketLink.value.trim();
+    const isFeatured = schedFeatured.checked;
+
+    let eventType = null;
+    if(schedTypeDine.checked) eventType = 'dine_vibe';
+    if(schedTypeDance.checked) eventType = 'dance_party';
+
+    if(!eventName || !eventDate || !venue || !eventType){
+      schedError.style.display = 'block';
+      return;
+    }
+    schedError.style.display = 'none';
+    saveEventBtn.disabled = true;
+    saveEventBtn.textContent = 'Saving...';
+
+    try {
+      let flyerUrl = null;
+      if(selectedFlyerFile){
+        const safeName = `${Date.now()}-${selectedFlyerFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const path = `${eventDate}__${slugify(eventName)}/${safeName}`;
+        const { error: uploadError } = await sb.storage.from(FLYER_BUCKET).upload(path, selectedFlyerFile, { cacheControl: '3600', upsert: false });
+        if(uploadError) throw uploadError;
+        flyerUrl = sb.storage.from(FLYER_BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+
+      if(isFeatured){
+        await sb.from('events').update({ featured: false }).eq('featured', true);
+      }
+
+      const { error: insertError } = await sb.from('events').insert([{
+        event_name: eventName,
+        event_date: eventDate,
+        venue: venue,
+        event_type: eventType,
+        featured: isFeatured,
+        flyer_url: flyerUrl,
+        ticket_link: ticketLink || null
+      }]);
+      if(insertError) throw insertError;
+
+      scheduleSuccess.style.display = 'block';
+      schedNameInput.value = '';
+      schedDateInput.value = '';
+      schedVenueInput.value = '';
+      schedTypeDine.checked = false;
+      schedTypeDance.checked = false;
+      schedFeatured.checked = false;
+      schedTicketLink.value = '';
+      selectedFlyerFile = null;
+      flyerInput.value = '';
+      flyerPreview.style.display = 'none';
+      flyerDropText.textContent = 'Drag the flyer here, or click to choose a file';
+
+      loadScheduleList();
+    } catch(err){
+      console.error('Save event failed:', err);
+      schedError.textContent = "Something went wrong saving this event — try again.";
+      schedError.style.display = 'block';
+    } finally {
+      saveEventBtn.disabled = false;
+      saveEventBtn.textContent = 'Save Event';
+    }
+  });
+
+  async function loadScheduleList(){
+    schedStateMsg.textContent = '';
+    schedList.innerHTML = '';
+
+    const { data, error } = await sb.from('events').select('*').order('event_date', { ascending: true });
+    if(error){ schedStateMsg.textContent = "Couldn't load the schedule right now — try again shortly."; return; }
+    if(!data || data.length === 0){ schedStateMsg.textContent = "No events on the schedule yet — add one above."; return; }
+
+    data.forEach(ev => {
+      const typeLabel = ev.event_type === 'dance_party' ? 'Dance Party' : 'Dine & Vibe';
+      const row = document.createElement('div');
+      row.className = 'sched-row';
+      row.innerHTML = `
+        <div class="thumb">${ev.flyer_url ? `<img src="${ev.flyer_url}" alt="">` : ''}</div>
+        <div class="info">
+          <h3>${ev.event_name}</h3>
+          <div class="meta">${[formatDate(ev.event_date), ev.venue].filter(Boolean).join(' · ')}</div>
+          <div class="sched-badges">
+            <span class="sched-badge">${typeLabel}</span>
+            ${ev.featured ? '<span class="sched-badge featured">Featured</span>' : ''}
+          </div>
+        </div>
+        <div class="sched-actions">
+          ${!ev.featured ? '<button class="feature-btn">Feature</button>' : ''}
+          <button class="delete-btn">Delete</button>
+        </div>
+      `;
+      const featureBtn = row.querySelector('.feature-btn');
+      if(featureBtn){
+        featureBtn.addEventListener('click', async () => {
+          await sb.from('events').update({ featured: false }).eq('featured', true);
+          await sb.from('events').update({ featured: true }).eq('id', ev.id);
+          showToast('Featured event updated');
+          loadScheduleList();
+        });
+      }
+      row.querySelector('.delete-btn').addEventListener('click', async () => {
+        if(!confirm(`Remove "${ev.event_name}" from the schedule?`)) return;
+        await sb.from('events').delete().eq('id', ev.id);
+        showToast('Event removed');
+        loadScheduleList();
+      });
+      schedList.appendChild(row);
+    });
   }
 </script>
 
