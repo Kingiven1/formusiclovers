@@ -497,30 +497,39 @@
     font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;
     color:var(--rose);opacity:0.55;text-align:center;padding:6px;
   }
-  .featured-flyer-caption{
-    position:absolute; left:0; right:0; bottom:0;
-    padding:20px 20px 18px;
-    background:linear-gradient(to top, rgba(37,57,47,0.92), transparent);
-    color:var(--opal);
-    text-align:left;
+  .featured-info{
+    text-align:center;
+    max-width:420px;
+    margin:22px auto 0;
   }
-  .featured-flyer-caption .type{
+  .featured-info .type{
     display:inline-block;
     font-family:'General Sans',sans-serif;font-size:0.63rem;letter-spacing:0.14em;text-transform:uppercase;
-    padding:4px 9px;margin-bottom:8px;
-    border:1px solid var(--gold);color:var(--gold-bright);
+    padding:4px 10px;margin-bottom:10px;
+    border:1px solid var(--jade);color:var(--jade-deep);
   }
-  .featured-flyer-caption h3{
+  .featured-info h3{
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
-    font-size:1.3rem;margin-bottom:4px;
+    font-size:clamp(1.15rem, 3vw, 1.4rem);
+    color:var(--jade-deep);
+    margin-bottom:6px;
   }
-  .featured-flyer-caption .venue{ font-size:0.82rem; color:rgba(250,245,239,0.75); }
+  .featured-info .venue{
+    font-family:'Space Mono',monospace;
+    font-size:0.76rem;
+    color:var(--rose);
+    letter-spacing:0.01em;
+  }
   .featured-tap-hint{
     text-align:center;
-    margin-top:16px;
+    margin-top:14px;
     font-family:'Space Mono',monospace;
     font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;
     color:var(--jade);opacity:0.65;
+  }
+  @media (max-width:520px){
+    .featured-flyer-link{ max-width:340px; }
+    .featured-info{ max-width:340px; padding:0 8px; }
   }
 
   /* ============ DATE CARD FLYER THUMBNAIL ============ */
@@ -803,6 +812,12 @@
     };
   }
 
+  function formatFullDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    if (isNaN(d)) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
   function typeLabel(type) {
     return type === 'dance_party' ? 'Dance Party' : 'Dine &amp; Vibe';
   }
@@ -828,19 +843,18 @@
     if (!featured) {
       featuredContainer.innerHTML = `<p style="text-align:center;color:rgba(42,36,32,0.55);">No upcoming events yet — check back soon.</p>`;
     } else {
-      const { day, month } = formatEventDate(featured.event_date);
       featuredContainer.innerHTML = `
         <a class="featured-flyer-link" href="${featured.ticket_link || '#'}" target="_blank" rel="noopener">
           <div class="featured-flyer">
             <img src="${featured.flyer_url || ''}" alt="${featured.event_name} flyer">
             <span class="placeholder-mark">Flyer</span>
-            <div class="featured-flyer-caption">
-              <span class="type">${typeLabel(featured.event_type)}</span>
-              <h3>${featured.event_name}</h3>
-              <div class="venue">${month} ${day} · ${featured.venue || ''}</div>
-            </div>
           </div>
         </a>
+        <div class="featured-info">
+          <span class="type">${typeLabel(featured.event_type)}</span>
+          <h3>${featured.event_name}</h3>
+          <div class="venue">${formatFullDate(featured.event_date)} · ${featured.venue || ''}</div>
+        </div>
         <p class="featured-tap-hint">Tap the flyer for tickets</p>
       `;
     }
