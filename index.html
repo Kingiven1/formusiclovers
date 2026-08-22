@@ -793,6 +793,93 @@
     'sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd' // <-- swap this for the same anon key used in gallery.html / crew.html
   );
 
+  // ============ SCHEDULE + FEATURED EVENT (from Supabase 'events' table) ============
+  function formatEventDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    if (isNaN(d)) return { day: '', month: '' };
+    return {
+      day: d.getDate(),
+      month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    };
+  }
+
+  function typeLabel(type) {
+    return type === 'dance_party' ? 'Dance Party' : 'Dine &amp; Vibe';
+  }
+
+  async function loadEvents() {
+    const featuredContainer = document.getElementById('featured-event-container');
+    const dateListContainer = document.getElementById('date-list-container');
+
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .gte('event_date', new Date().toISOString().split('T')[0]) // only today/future
+      .order('event_date', { ascending: true });
+
+    if (error || !data) {
+      dateListContainer.innerHTML = `<div class="empty-card">Couldn't load the schedule right now — check back shortly.</div>`;
+      return;
+    }
+
+    // ---- Featured event (top of homepage) ----
+    const featured = data.find(ev => ev.featured) || data[0]; // fall back to soonest event if none marked featured
+
+    if (!featured) {
+      featuredContainer.innerHTML = `<p style="text-align:center;color:rgba(42,36,32,0.55);">No upcoming events yet — check back soon.</p>`;
+    } else {
+      const { day, month } = formatEventDate(featured.event_date);
+      featuredContainer.innerHTML = `
+        <a class="featured-flyer-link" href="${featured.ticket_link || '#'}" target="_blank" rel="noopener">
+          <div class="featured-flyer">
+            <img src="${featured.flyer_url || ''}" alt="${featured.event_name} flyer">
+            <span class="placeholder-mark">Flyer</span>
+            <div class="featured-flyer-caption">
+              <span class="type">${typeLabel(featured.event_type)}</span>
+              <h3>${featured.event_name}</h3>
+              <div class="venue">${month} ${day} · ${featured.venue || ''}</div>
+            </div>
+          </div>
+        </a>
+        <p class="featured-tap-hint">Tap the flyer for tickets</p>
+      `;
+    }
+
+    // ---- Full schedule list ----
+    if (data.length === 0) {
+      dateListContainer.innerHTML = `<div class="empty-card">More dates dropping soon — <a href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">join the VIP list</a> to hear first.</div>`;
+      return;
+    }
+
+    dateListContainer.innerHTML = data.map(ev => {
+      const { day, month } = formatEventDate(ev.event_date);
+      return `
+        <div class="date-card">
+          <div class="date-flyer">
+            <img src="${ev.flyer_url || ''}" alt="${ev.event_name} flyer">
+            <span class="placeholder-mark">Flyer</span>
+          </div>
+          <div class="date-block">
+            <div class="day">${day}</div>
+            <div class="month">${month}</div>
+          </div>
+          <div class="date-info">
+            <span class="type">${typeLabel(ev.event_type)}</span>
+            <h3>${ev.event_name}</h3>
+            <div class="venue">${ev.venue || ''}</div>
+          </div>
+          <a class="btn btn-solid" href="${ev.ticket_link || '#'}" target="_blank" rel="noopener">Get Tickets</a>
+        </div>
+      `;
+    }).join('') + `
+      <div class="empty-card">
+        More dates dropping soon — <a href="https://posh.vip/e/fml-vip-mailing-list" target="_blank" rel="noopener">join the VIP list</a> to hear first.
+      </div>
+    `;
+  }
+
+  loadEvents();
+
   // Shared submit handler for both the footer form and the popup form
   async function handleSignupSubmit(prefix) {
     const email = document.getElementById(`${prefix}-email`).value.trim();
