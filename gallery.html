@@ -73,6 +73,7 @@
     overflow:hidden;
     background:var(--blush);
     position:relative;
+    cursor:pointer;
   }
   .g-item img{
     width:100%;height:100%;object-fit:cover;display:block;
@@ -155,12 +156,29 @@
     padding:40px;
   }
   .lightbox.open{ display:flex; }
-  .lightbox img{ max-width:90vw; max-height:85vh; object-fit:contain; }
+  .lightbox img{ max-width:90vw; max-height:78vh; object-fit:contain; }
   .lightbox-close{
     position:absolute; top:24px; right:32px; color:var(--opal);
     font-family:'General Sans',sans-serif; font-size:0.8rem; letter-spacing:0.1em; text-transform:uppercase;
     cursor:pointer; border:1px solid var(--opal); padding:8px 16px;
   }
+  .lightbox-actions{
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+    display:flex; gap:12px;
+  }
+  .lightbox-actions button{
+    font-family:'General Sans',sans-serif; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase;
+    padding:12px 22px; border:1px solid var(--gold); background:transparent; color:var(--opal);
+    cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.2s, color 0.2s;
+  }
+  .lightbox-actions button:hover{ background:var(--gold); color:var(--jade-deep); }
+  .lightbox-actions button svg{ width:15px; height:15px; }
+  .lightbox-actions .action-msg{
+    position:absolute; bottom:76px; left:50%; transform:translateX(-50%);
+    color:var(--opal); font-family:'General Sans',sans-serif; font-size:0.75rem;
+    opacity:0; transition:opacity 0.2s; white-space:nowrap;
+  }
+  .lightbox-actions .action-msg.visible{ opacity:0.85; }
 </style>
 </head>
 <body>
@@ -187,6 +205,17 @@
 <div class="lightbox" id="lightbox">
   <div class="lightbox-close" id="lightbox-close">Close ✕</div>
   <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-actions">
+    <span class="action-msg" id="action-msg"></span>
+    <button id="share-btn" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      Share
+    </button>
+    <button id="download-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download
+    </button>
+  </div>
 </div>
 
 <script>
@@ -206,9 +235,84 @@
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxClose = document.getElementById('lightbox-close');
+  const shareBtn = document.getElementById('share-btn');
+  const downloadBtn = document.getElementById('download-btn');
+  const actionMsg = document.getElementById('action-msg');
 
   lightboxClose.addEventListener('click', () => lightbox.classList.remove('open'));
   lightbox.addEventListener('click', e => { if(e.target === lightbox) lightbox.classList.remove('open'); });
+
+  // Feature-detect whether this device/browser can share image files at all
+  // (mobile Safari/Chrome generally yes, most desktop browsers no — this is
+  // an OS-level capability, not something a website can add where it's missing).
+  let canShareFiles = false;
+  try {
+    const testFile = new File(['x'], 'test.jpg', { type: 'image/jpeg' });
+    canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [testFile] }));
+  } catch(e) {
+    canShareFiles = false;
+  }
+  if(canShareFiles){ shareBtn.style.display = 'flex'; }
+
+  function showActionMsg(text){
+    actionMsg.textContent = text;
+    actionMsg.classList.add('visible');
+    setTimeout(() => actionMsg.classList.remove('visible'), 2200);
+  }
+
+  let currentPhotoUrl = '';
+  let currentPhotoName = 'for-music-lovers-photo.jpg';
+
+  async function fetchAsFile(url, filename){
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type || 'image/jpeg' });
+  }
+
+  shareBtn.addEventListener('click', async () => {
+    if(!currentPhotoUrl) return;
+    try {
+      const file = await fetchAsFile(currentPhotoUrl, currentPhotoName);
+      await navigator.share({
+        files: [file],
+        title: 'For Music Lovers',
+        text: 'From a For Music Lovers night ✨ @thisisformusiclovers'
+      });
+    } catch(err) {
+      // AbortError just means they closed the share sheet — not a real failure
+      if(err.name !== 'AbortError'){
+        console.error('Share failed:', err);
+        showActionMsg("Couldn't open share — try downloading instead");
+      }
+    }
+  });
+
+  downloadBtn.addEventListener('click', async () => {
+    if(!currentPhotoUrl) return;
+    try {
+      const response = await fetch(currentPhotoUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = currentPhotoName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      showActionMsg('Downloaded');
+    } catch(err) {
+      console.error('Download failed:', err);
+      window.open(currentPhotoUrl, '_blank');
+    }
+  });
+
+  function openLightbox(url, filename){
+    currentPhotoUrl = url;
+    currentPhotoName = filename;
+    lightboxImg.src = url;
+    lightbox.classList.add('open');
+  }
 
   function labelize(slug){
     return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -390,18 +494,16 @@
       return;
     }
 
-    images.forEach(file => {
+    images.forEach((file, index) => {
       const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
+      const downloadName = `for-music-lovers-${slug}-${index + 1}.jpg`;
       const item = document.createElement('div');
       item.className = 'g-item';
       const img = document.createElement('img');
       img.src = url;
       img.alt = 'For Music Lovers event photo';
       img.loading = 'lazy';
-      img.addEventListener('click', () => {
-        lightboxImg.src = url;
-        lightbox.classList.add('open');
-      });
+      img.addEventListener('click', () => openLightbox(url, downloadName));
       item.appendChild(img);
       galleryGrid.appendChild(item);
     });
