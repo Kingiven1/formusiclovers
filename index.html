@@ -24,6 +24,29 @@
 <title>For Music Lovers — Dine. Vibe. Party.</title>
 <meta name="description" content="For Music Lovers — Dine & Vibe dinner parties and Dance Party nights for our elevated & melanated fam worldwide.">
 
+<!-- Google Analytics (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-87VVHX4Y2D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-87VVHX4Y2D');
+</script>
+
+<!-- Meta Pixel -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '216664315764175');
+  fbq('track', 'PageView');
+</script>
+
 <!-- Link preview / share card (iMessage, WhatsApp, Instagram, etc.) -->
 <meta property="og:title" content="For Music Lovers">
 <meta property="og:description" content="Dine. Vibe. Party. For our elevated & melanated fam worldwide.">
@@ -880,7 +903,7 @@
           <span class="corner corner-tr"></span>
           <span class="corner corner-bl"></span>
           <span class="corner corner-br"></span>
-          <a class="featured-flyer-link" href="${featured.ticket_link || '#'}" target="_blank" rel="noopener">
+          <a class="featured-flyer-link" href="${featured.ticket_link || '#'}" target="_blank" rel="noopener" onclick="if(typeof fbq!=='undefined'){fbq('track','InitiateCheckout',{content_name:'${featured.event_name.replace(/'/g, "\\'")}'});}">
             ${flyerMarkup}
           </a>
         </div>
@@ -916,7 +939,7 @@
             <h3>${ev.event_name}</h3>
             <div class="venue">${ev.venue || ''}</div>
           </div>
-          <a class="btn btn-solid" href="${ev.ticket_link || '#'}" target="_blank" rel="noopener">Get Tickets</a>
+          <a class="btn btn-solid" href="${ev.ticket_link || '#'}" target="_blank" rel="noopener" onclick="if(typeof fbq!=='undefined'){fbq('track','InitiateCheckout',{content_name:'${ev.event_name.replace(/'/g, "\\'")}'});}">Get Tickets</a>
         </div>
       `;
     }).join('') + `
