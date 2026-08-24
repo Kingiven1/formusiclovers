@@ -237,8 +237,11 @@
         <label for="sched-date">Date</label>
         <input type="date" id="sched-date">
 
-        <label for="sched-venue">Venue &amp; City</label>
-        <input type="text" id="sched-venue" placeholder="e.g. Taco Boy LoSo — Charlotte, NC">
+        <label for="sched-venue">Venue</label>
+        <input type="text" id="sched-venue" placeholder="e.g. Taco Boy LoSo — 3700 South Blvd">
+
+        <label for="sched-city">City</label>
+        <input type="text" id="sched-city" placeholder="e.g. Charlotte, NC">
 
         <label>Event Type</label>
         <div class="type-row">
@@ -267,7 +270,7 @@
           <input type="file" id="flyer-input" accept="image/*" style="display:none;">
         </div>
 
-        <div class="field-error" id="sched-error">Fill in event name, date, venue, and select a type before saving.</div>
+        <div class="field-error" id="sched-error">Fill in event name, date, venue, city, and select a type before saving.</div>
         <button class="save-event-btn" id="save-event-btn">Save Event</button>
         <div class="schedule-success" id="schedule-success">Event added to the schedule.</div>
       </div>
@@ -546,6 +549,7 @@
   const schedNameInput = document.getElementById('sched-name');
   const schedDateInput = document.getElementById('sched-date');
   const schedVenueInput = document.getElementById('sched-venue');
+  const schedCityInput = document.getElementById('sched-city');
   const schedTypeDine = document.getElementById('sched-type-dine');
   const schedTypeDance = document.getElementById('sched-type-dance');
   const schedFeatured = document.getElementById('sched-featured');
@@ -592,6 +596,7 @@
     const eventName = schedNameInput.value.trim();
     const eventDate = schedDateInput.value;
     const venue = schedVenueInput.value.trim();
+    const city = schedCityInput.value.trim();
     const ticketLink = schedTicketLink.value.trim();
     const isFeatured = schedFeatured.checked;
 
@@ -599,7 +604,7 @@
     if(schedTypeDine.checked) eventType = 'dine_vibe';
     if(schedTypeDance.checked) eventType = 'dance_party';
 
-    if(!eventName || !eventDate || !venue || !eventType){
+    if(!eventName || !eventDate || !venue || !city || !eventType){
       schedError.style.display = 'block';
       return;
     }
@@ -625,6 +630,7 @@
         event_name: eventName,
         event_date: eventDate,
         venue: venue,
+        city: city,
         event_type: eventType,
         featured: isFeatured,
         flyer_url: flyerUrl,
@@ -636,6 +642,7 @@
       schedNameInput.value = '';
       schedDateInput.value = '';
       schedVenueInput.value = '';
+      schedCityInput.value = '';
       schedTypeDine.checked = false;
       schedTypeDance.checked = false;
       schedFeatured.checked = false;
@@ -672,7 +679,7 @@
         <div class="thumb">${ev.flyer_url ? `<img src="${ev.flyer_url}" alt="">` : ''}</div>
         <div class="info">
           <h3>${ev.event_name}</h3>
-          <div class="meta">${[formatDate(ev.event_date), ev.venue].filter(Boolean).join(' · ')}</div>
+          <div class="meta">${[formatDate(ev.event_date), ev.venue, ev.city].filter(Boolean).join(' · ')}</div>
           <div class="sched-badges">
             <span class="sched-badge">${typeLabel}</span>
             ${ev.featured ? '<span class="sched-badge featured">Featured</span>' : ''}
