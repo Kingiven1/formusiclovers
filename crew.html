@@ -196,6 +196,7 @@
       <button class="tab-btn active" id="tab-upload-btn">Upload Photos</button>
       <button class="tab-btn" id="tab-manage-btn">Manage Galleries</button>
       <button class="tab-btn" id="tab-schedule-btn">Schedule</button>
+      <button class="tab-btn" id="tab-referrals-btn">Referrals</button>
     </div>
 
     <!-- ===== UPLOAD TAB ===== -->
@@ -257,7 +258,7 @@
 
         <div class="check-row">
           <input type="checkbox" id="sched-featured">
-          <label for="sched-featured">Feature this event on the homepage</label>
+          <label for="sched-featured">Feature this event on the homepage (max 2 at once)</label>
         </div>
 
         <label for="sched-ticket-link">Ticket Link (Posh URL)</label>
@@ -277,6 +278,15 @@
 
       <div id="sched-list"></div>
       <div id="sched-state-msg" class="state-msg"></div>
+    </div>
+
+    <!-- ===== REFERRALS TAB ===== -->
+    <div class="tab-panel" id="tab-referrals">
+      <p style="color:rgba(42,36,32,0.6); font-size:0.85rem; margin-bottom:24px; max-width:520px;">
+        Share your personal link to track who you bring in: add <code style="background:var(--blush); padding:2px 6px;">?ref=yourname</code> to the end of thisisformusiclovers.com — e.g. <code style="background:var(--blush); padding:2px 6px;">thisisformusiclovers.com?ref=king</code>. Anyone who signs up after clicking your link gets counted below.
+      </p>
+      <div id="referral-list" class="event-list"></div>
+      <div id="referral-state-msg" class="state-msg"></div>
     </div>
   </div>
 </div>
@@ -315,23 +325,29 @@
   const tabUploadBtn = document.getElementById('tab-upload-btn');
   const tabManageBtn = document.getElementById('tab-manage-btn');
   const tabScheduleBtn = document.getElementById('tab-schedule-btn');
+  const tabReferralsBtn = document.getElementById('tab-referrals-btn');
   const tabUpload = document.getElementById('tab-upload');
   const tabManage = document.getElementById('tab-manage');
   const tabSchedule = document.getElementById('tab-schedule');
+  const tabReferrals = document.getElementById('tab-referrals');
 
   tabUploadBtn.addEventListener('click', () => switchTab('upload'));
   tabManageBtn.addEventListener('click', () => switchTab('manage'));
   tabScheduleBtn.addEventListener('click', () => switchTab('schedule'));
+  tabReferralsBtn.addEventListener('click', () => switchTab('referrals'));
 
   function switchTab(name){
     tabUploadBtn.classList.toggle('active', name === 'upload');
     tabManageBtn.classList.toggle('active', name === 'manage');
     tabScheduleBtn.classList.toggle('active', name === 'schedule');
+    tabReferralsBtn.classList.toggle('active', name === 'referrals');
     tabUpload.classList.toggle('active', name === 'upload');
     tabManage.classList.toggle('active', name === 'manage');
     tabSchedule.classList.toggle('active', name === 'schedule');
+    tabReferrals.classList.toggle('active', name === 'referrals');
     if(name === 'manage') loadEventList();
     if(name === 'schedule') loadScheduleList();
+    if(name === 'referrals') loadReferralLeaderboard();
   }
 
   function showToast(msg){
@@ -623,7 +639,15 @@
       }
 
       if(isFeatured){
-        await sb.from('events').update({ featured: false }).eq('featured', true);
+        const { count, error: countError } = await sb.from('events').select('*', { count: 'exact', head: true }).eq('featured', true);
+        if(countError) throw countError;
+        if((count || 0) >= 2){
+          schedError.textContent = "You can only feature up to 2 events at once — unfeature one in the list below first.";
+          schedError.style.display = 'block';
+          saveEventBtn.disabled = false;
+          saveEventBtn.textContent = 'Save Event';
+          return;
+        }
       }
 
       const { error: insertError } = await sb.from('events').insert([{
@@ -671,6 +695,8 @@
     if(error){ schedStateMsg.textContent = "Couldn't load the schedule right now — try again shortly."; return; }
     if(!data || data.length === 0){ schedStateMsg.textContent = "No events on the schedule yet — add one above."; return; }
 
+    const featuredCount = data.filter(ev => ev.featured).length;
+
     data.forEach(ev => {
       const typeLabel = ev.event_type === 'dance_party' ? 'Dance Party' : 'Dine & Vibe';
       const row = document.createElement('div');
@@ -686,16 +712,25 @@
           </div>
         </div>
         <div class="sched-actions">
-          ${!ev.featured ? '<button class="feature-btn">Feature</button>' : ''}
+          ${ev.featured
+            ? '<button class="feature-btn unfeature-btn">Unfeature</button>'
+            : (featuredCount < 2 ? '<button class="feature-btn">Feature</button>' : '')}
           <button class="delete-btn">Delete</button>
         </div>
       `;
-      const featureBtn = row.querySelector('.feature-btn');
+      const featureBtn = row.querySelector('.feature-btn:not(.unfeature-btn)');
       if(featureBtn){
         featureBtn.addEventListener('click', async () => {
-          await sb.from('events').update({ featured: false }).eq('featured', true);
           await sb.from('events').update({ featured: true }).eq('id', ev.id);
-          showToast('Featured event updated');
+          showToast('Event featured');
+          loadScheduleList();
+        });
+      }
+      const unfeatureBtn = row.querySelector('.unfeature-btn');
+      if(unfeatureBtn){
+        unfeatureBtn.addEventListener('click', async () => {
+          await sb.from('events').update({ featured: false }).eq('id', ev.id);
+          showToast('Event unfeatured');
           loadScheduleList();
         });
       }
@@ -706,6 +741,40 @@
         loadScheduleList();
       });
       schedList.appendChild(row);
+    });
+  }
+
+  // ============ REFERRALS TAB LOGIC ============
+  async function loadReferralLeaderboard(){
+    const referralList = document.getElementById('referral-list');
+    const referralStateMsg = document.getElementById('referral-state-msg');
+    referralList.innerHTML = '';
+    referralStateMsg.textContent = '';
+
+    const { data, error } = await sb.rpc('get_referral_leaderboard');
+
+    if(error){
+      referralStateMsg.textContent = "Couldn't load referral data right now — try again shortly.";
+      return;
+    }
+    if(!data || data.length === 0){
+      referralStateMsg.textContent = "No referral signups yet — share a link with ?ref=yourname to get started.";
+      return;
+    }
+
+    data.forEach((entry, index) => {
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.style.cursor = 'default';
+      const rankLabel = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+      row.innerHTML = `
+        <div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.4rem;">${rankLabel}</div>
+        <div class="info">
+          <h3>${entry.referred_by}</h3>
+          <div class="meta">${entry.signup_count} ${entry.signup_count === 1 ? 'signup' : 'signups'}</div>
+        </div>
+      `;
+      referralList.appendChild(row);
     });
   }
 </script>

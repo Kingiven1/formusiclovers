@@ -485,6 +485,17 @@
     font-family:'Playfair Display',serif;font-style:italic;font-weight:600;
     font-size:clamp(1.6rem,3.5vw,2.2rem);color:var(--jade-deep);margin-top:8px;
   }
+  .featured-events-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:48px;
+    align-items:start;
+  }
+  .featured-event-slot{
+    flex:1 1 320px;
+    max-width:420px;
+  }
   .featured-flyer-frame{
     max-width:420px;
     margin:0 auto;
@@ -848,6 +859,17 @@
     'sb_publishable_Tb_oE1eF4Z8Xuf8ulFYxMw_I93LFIXd' // <-- swap this for the same anon key used in gallery.html / crew.html
   );
 
+  // ---- Referral tracking ----
+  // Capture ?ref=NAME from the URL (e.g. thisisformusiclovers.com?ref=king)
+  // and remember it in this browser so it still applies even if someone
+  // browses around before signing up later (via the popup or footer form).
+  (function captureReferral(){
+    const refParam = new URLSearchParams(window.location.search).get('ref');
+    if(refParam){
+      localStorage.setItem('fml_referrer', refParam.trim().toLowerCase());
+    }
+  })();
+
   // ============ SCHEDULE + FEATURED EVENT (from Supabase 'events' table) ============
   function formatEventDate(isoDate) {
     const d = new Date(isoDate + 'T00:00:00');
@@ -883,36 +905,48 @@
       return;
     }
 
-    // ---- Featured event (top of homepage) ----
-    const featured = data.find(ev => ev.featured) || data[0]; // fall back to soonest event if none marked featured
+    // ---- Featured events (top of homepage, up to 2) ----
+    const featuredEvents = data.filter(ev => ev.featured).slice(0, 2);
+    const eventsToShow = featuredEvents.length > 0 ? featuredEvents : (data[0] ? [data[0]] : []); // fall back to soonest event if none marked featured
     const featuredHeading = document.getElementById('featured-heading');
 
-    if (!featured) {
+    function renderFeaturedSlot(ev) {
+      const flyerMarkup = ev.flyer_url
+        ? `<img src="${ev.flyer_url}" alt="${ev.event_name} flyer">`
+        : `<div class="featured-flyer-placeholder"><span class="placeholder-mark">Flyer</span></div>`;
+
+      return `
+        <div class="featured-event-slot">
+          <div class="featured-flyer-frame">
+            <span class="corner corner-tl"></span>
+            <span class="corner corner-tr"></span>
+            <span class="corner corner-bl"></span>
+            <span class="corner corner-br"></span>
+            <a class="featured-flyer-link" href="${ev.ticket_link || '#'}" target="_blank" rel="noopener" onclick="if(typeof fbq!=='undefined'){fbq('track','InitiateCheckout',{content_name:'${ev.event_name.replace(/'/g, "\\'")}'});}">
+              ${flyerMarkup}
+            </a>
+          </div>
+          <div class="featured-info">
+            <span class="type">${typeLabel(ev.event_type)}</span>
+            <h3>${ev.event_name}</h3>
+            <div class="venue">${formatFullDate(ev.event_date)} · ${ev.venue || ''}</div>
+          </div>
+          <p class="featured-tap-hint">Tap the flyer for tickets</p>
+        </div>
+      `;
+    }
+
+    if (eventsToShow.length === 0) {
       featuredHeading.textContent = 'Next Up';
       featuredContainer.innerHTML = `<p style="text-align:center;color:rgba(42,36,32,0.55);">No upcoming events yet — check back soon.</p>`;
     } else {
-      featuredHeading.textContent = featured.city ? `Next Up in ${featured.city}` : 'Next Up';
-
-      const flyerMarkup = featured.flyer_url
-        ? `<img src="${featured.flyer_url}" alt="${featured.event_name} flyer">`
-        : `<div class="featured-flyer-placeholder"><span class="placeholder-mark">Flyer</span></div>`;
+      const cities = Array.from(new Set(eventsToShow.map(ev => ev.city).filter(Boolean)));
+      featuredHeading.textContent = cities.length > 0 ? `Next Up in ${cities.join(' & ')}` : 'Next Up';
 
       featuredContainer.innerHTML = `
-        <div class="featured-flyer-frame">
-          <span class="corner corner-tl"></span>
-          <span class="corner corner-tr"></span>
-          <span class="corner corner-bl"></span>
-          <span class="corner corner-br"></span>
-          <a class="featured-flyer-link" href="${featured.ticket_link || '#'}" target="_blank" rel="noopener" onclick="if(typeof fbq!=='undefined'){fbq('track','InitiateCheckout',{content_name:'${featured.event_name.replace(/'/g, "\\'")}'});}">
-            ${flyerMarkup}
-          </a>
+        <div class="featured-events-row">
+          ${eventsToShow.map(renderFeaturedSlot).join('')}
         </div>
-        <div class="featured-info">
-          <span class="type">${typeLabel(featured.event_type)}</span>
-          <h3>${featured.event_name}</h3>
-          <div class="venue">${formatFullDate(featured.event_date)} · ${featured.venue || ''}</div>
-        </div>
-        <p class="featured-tap-hint">Tap the flyer for tickets</p>
       `;
     }
 
@@ -959,7 +993,7 @@
     const messageEl = document.getElementById(`${prefix}-message`);
 
     const { error } = await sb.from('subscribers').insert([
-      { email, phone: phone || null, city }
+      { email, phone: phone || null, city, referred_by: localStorage.getItem('fml_referrer') || null }
     ]);
 
     if (error) {
