@@ -622,10 +622,18 @@
     });
   }
 
-  // Zips up every photo in a gallery and downloads it as one file — used by both
-  // the "Download All Photos" button inside a gallery and the quick "Download All"
+  // Zips up every photo in a gallery and downloads it — used by both the
+  // "Download All Photos" button inside a gallery and the quick "Download All"
   // button on each row in the gallery list, so King can pull Shawn's uploads down
   // to his own computer for backup without opening the Supabase dashboard.
+  //
+  // Large galleries (older ones especially, uploaded before auto-compression was
+  // added) can be hundreds of MB of full-res photos — holding that all in memory
+  // as one zip blob is what crashes/fails in the browser. So this batches photos
+  // into chunks of BATCH_SIZE and downloads one zip per batch (Part 1, Part 2...),
+  // and skips (rather than aborts on) any single photo that fails to fetch.
+  const DOWNLOAD_BATCH_SIZE = 25;
+
   async function downloadAllPhotos(slug, parsed, triggerEl){
     const originalLabel = triggerEl.textContent;
     triggerEl.disabled = true;
@@ -639,28 +647,68 @@
         return;
       }
 
-      const zip = new JSZip();
-      for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        triggerEl.textContent = `Zipping ${i + 1} of ${files.length}...`;
-        const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
-        const res = await fetch(url);
-        const blob = await res.blob();
-        zip.file(file.name.replace(/^cover-/i, ''), blob);
+      const batches = [];
+      for(let i = 0; i < files.length; i += DOWNLOAD_BATCH_SIZE){
+        batches.push(files.slice(i, i + DOWNLOAD_BATCH_SIZE));
       }
 
-      triggerEl.textContent = 'Building zip...';
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipName = `${slugify(parsed.name || slug)}-photos.zip`;
-      const zipUrl = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = zipUrl;
-      a.download = zipName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(zipUrl);
-      showToast(`Downloaded ${files.length} photos`);
+      const baseName = slugify(parsed.name || slug);
+      let totalDownloaded = 0;
+      let totalFailed = 0;
+
+      for(let b = 0; b < batches.length; b++){
+        const batch = batches[b];
+        const zip = new JSZip();
+        let addedInBatch = 0;
+
+        for(let i = 0; i < batch.length; i++){
+          const file = batch[i];
+          const overallIndex = b * DOWNLOAD_BATCH_SIZE + i + 1;
+          triggerEl.textContent = batches.length > 1
+            ? `Batch ${b + 1}/${batches.length} — photo ${overallIndex}/${files.length}...`
+            : `Zipping ${overallIndex} of ${files.length}...`;
+          try {
+            const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
+            const res = await fetch(url);
+            if(!res.ok) throw new Error(`fetch failed: ${res.status}`);
+            const blob = await res.blob();
+            zip.file(file.name.replace(/^cover-/i, ''), blob);
+            addedInBatch++;
+          } catch(fileErr){
+            console.error(`Skipped ${file.name}:`, fileErr);
+            totalFailed++;
+          }
+        }
+
+        if(addedInBatch === 0) continue;
+
+        triggerEl.textContent = batches.length > 1 ? `Building zip ${b + 1}/${batches.length}...` : 'Building zip...';
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipName = batches.length > 1
+          ? `${baseName}-photos-part${b + 1}-of-${batches.length}.zip`
+          : `${baseName}-photos.zip`;
+        const zipUrl = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = zipUrl;
+        a.download = zipName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(zipUrl);
+        totalDownloaded += addedInBatch;
+
+        // Give the browser a beat between downloads so it doesn't choke on
+        // triggering several file saves back-to-back.
+        if(b < batches.length - 1) await new Promise(r => setTimeout(r, 600));
+      }
+
+      if(totalFailed > 0){
+        showToast(`Downloaded ${totalDownloaded} photos — ${totalFailed} failed, try again for those`);
+      } else if(batches.length > 1){
+        showToast(`Downloaded ${totalDownloaded} photos in ${batches.length} zip files`);
+      } else {
+        showToast(`Downloaded ${totalDownloaded} photos`);
+      }
     } catch(err){
       console.error('Download all failed:', err);
       showToast('Something went wrong building the zip — try again');
