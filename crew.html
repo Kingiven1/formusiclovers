@@ -806,10 +806,34 @@
   //
   // Large galleries (older ones especially, uploaded before auto-compression was
   // added) can be hundreds of MB of full-res photos — holding that all in memory
-  // as one zip blob is what crashes/fails in the browser. So this batches photos
-  // into chunks of BATCH_SIZE and downloads one zip per batch (Part 1, Part 2...),
-  // and skips (rather than aborts on) any single photo that fails to fetch.
-  const DOWNLOAD_BATCH_SIZE = 25;
+  // as one zip blob is what crashes/fails in the browser. So batches are sized by
+  // actual file size, not photo count: a batch of 25 old 8MB originals (~200MB)
+  // is just as likely to crash a tab as a batch of 3 huge flyers, while 100+ tiny
+  // compressed photos can safely ride in a single zip. Each batch stays under
+  // MAX_BATCH_BYTES regardless of how many photos that takes, and skips (rather
+  // than aborts on) any single photo that fails to fetch.
+  const MAX_BATCH_BYTES = 150 * 1024 * 1024; // ~150MB per zip — safe headroom for Safari
+  const ASSUMED_SIZE_IF_UNKNOWN = 5 * 1024 * 1024; // fallback if Supabase doesn't report a file's size
+
+  function buildSizeBatches(files){
+    const batches = [];
+    let current = [];
+    let currentBytes = 0;
+    for(const file of files){
+      const size = (file.metadata && file.metadata.size) || ASSUMED_SIZE_IF_UNKNOWN;
+      // Start a new batch if this file would push the current one over the limit
+      // (but never leave a batch empty just because one file alone exceeds it).
+      if(current.length > 0 && currentBytes + size > MAX_BATCH_BYTES){
+        batches.push(current);
+        current = [];
+        currentBytes = 0;
+      }
+      current.push(file);
+      currentBytes += size;
+    }
+    if(current.length > 0) batches.push(current);
+    return batches;
+  }
 
   async function downloadAllPhotos(slug, parsed, triggerEl){
     const originalLabel = triggerEl.textContent;
@@ -824,10 +848,8 @@
         return;
       }
 
-      const batches = [];
-      for(let i = 0; i < files.length; i += DOWNLOAD_BATCH_SIZE){
-        batches.push(files.slice(i, i + DOWNLOAD_BATCH_SIZE));
-      }
+      const batches = buildSizeBatches(files);
+      let seenSoFar = 0;
 
       const baseName = slugify(parsed.name || slug);
       let totalDownloaded = 0;
@@ -840,10 +862,10 @@
 
         for(let i = 0; i < batch.length; i++){
           const file = batch[i];
-          const overallIndex = b * DOWNLOAD_BATCH_SIZE + i + 1;
+          seenSoFar++;
           triggerEl.textContent = batches.length > 1
-            ? `Batch ${b + 1}/${batches.length} — photo ${overallIndex}/${files.length}...`
-            : `Zipping ${overallIndex} of ${files.length}...`;
+            ? `Batch ${b + 1}/${batches.length} — photo ${seenSoFar}/${files.length}...`
+            : `Zipping ${seenSoFar} of ${files.length}...`;
           try {
             const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
             const res = await fetch(url);
