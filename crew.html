@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500;1,600&family=General+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   :root{
     --opal:#faf5ef;
@@ -88,6 +89,19 @@
     font-family:'General Sans',sans-serif; font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase;
     color:var(--rose); cursor:pointer; display:inline-block; margin-bottom:16px;
   }
+  .manage-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .download-all-btn{
+    background:none; border:1px solid var(--jade); color:var(--jade-deep);
+    padding:11px 18px; font-size:0.72rem;
+  }
+  .download-all-btn:hover{ background:var(--jade); color:var(--opal); }
+  .download-all-btn:disabled{ opacity:0.5; cursor:default; background:none; color:var(--jade-deep); }
+  .quick-download-btn{
+    background:none; border:1px solid var(--line); color:rgba(42,36,32,0.6);
+    padding:8px 12px; font-size:0.66rem; flex-shrink:0;
+  }
+  .quick-download-btn:hover{ background:var(--blush); border-color:var(--jade); color:var(--jade-deep); }
+  .compress-note{ font-size:0.75rem; color:rgba(42,36,32,0.5); margin:-10px 0 20px; }
   .event-list{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
   .event-row{
     display:flex; align-items:center; gap:20px; padding:20px 0;
@@ -216,6 +230,7 @@
         <p>Drag photos here, or click to choose files</p>
         <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
       </div>
+      <p class="compress-note">Photos are automatically compressed for fast loading before they upload — no extra step needed.</p>
       <div class="field-error" id="gallery-error">Fill in event name, city, and date before uploading.</div>
       <div class="file-list" id="file-list"></div>
       <div class="success-banner" id="success-banner">Uploaded to <span id="success-gallery-name"></span> — switch to "Manage Galleries" to pick a featured cover.</div>
@@ -223,7 +238,10 @@
 
     <!-- ===== MANAGE TAB ===== -->
     <div class="tab-panel" id="tab-manage">
-      <div class="manage-back" id="manage-back" style="display:none;">← All Galleries</div>
+      <div class="manage-toolbar">
+        <div class="manage-back" id="manage-back" style="display:none;">← All Galleries</div>
+        <button class="download-all-btn" id="download-all-btn" style="display:none;">Download All Photos</button>
+      </div>
       <div id="event-list" class="event-list"></div>
       <div id="photo-grid" class="photo-grid"></div>
       <div id="state-msg" class="state-msg"></div>
@@ -422,6 +440,48 @@
   });
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
+  // Compresses an image client-side before it ever reaches Supabase — runs on
+  // every upload automatically, so photo size never depends on Shawn remembering
+  // to shrink anything on his end. Caps the longest edge at 2400px and re-encodes
+  // as JPEG at 82% quality, which keeps photos sharp for the site/gallery while
+  // cutting file size dramatically (a 12MB phone photo usually lands under 1MB).
+  function compressImage(file, maxDimension = 2400, quality = 0.82){
+    return new Promise((resolve) => {
+      // Skip compression for formats that don't benefit / can break in canvas (e.g. HEIC, GIF)
+      if(!file.type.startsWith('image/') || file.type === 'image/gif'){
+        resolve(file);
+        return;
+      }
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+        if(width <= maxDimension && height <= maxDimension && file.size < 1.5 * 1024 * 1024){
+          // Already small enough — don't bother re-encoding
+          resolve(file);
+          return;
+        }
+        const scale = Math.min(1, maxDimension / Math.max(width, height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if(!blob){ resolve(file); return; }
+          const newName = file.name.replace(/\.(heic|heif|png|jpe?g)$/i, '') + '.jpg';
+          resolve(new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() }));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file); // fall back to the original if it can't be decoded (e.g. some HEIC files)
+      };
+      img.src = objectUrl;
+    });
+  }
+
   async function handleFiles(fileListInput){
     const files = Array.from(fileListInput);
     if(files.length === 0) return;
@@ -450,12 +510,14 @@
     let successCount = 0;
     for(const { file, row } of rows){
       const statusEl = row.querySelector('.status');
-      statusEl.textContent = 'Uploading';
+      statusEl.textContent = 'Compressing';
       statusEl.className = 'status uploading';
       try {
-        const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const compressed = await compressImage(file);
+        statusEl.textContent = 'Uploading';
+        const safeName = `${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
         const path = `${gallerySlug}/${safeName}`;
-        const { error } = await sb.storage.from(BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+        const { error } = await sb.storage.from(BUCKET).upload(path, compressed, { cacheControl: '3600', upsert: false });
         if(error) throw error;
         statusEl.textContent = 'Done';
         statusEl.className = 'status done';
@@ -478,11 +540,17 @@
   const eventList = document.getElementById('event-list');
   const photoGrid = document.getElementById('photo-grid');
   const stateMsg = document.getElementById('state-msg');
+  const downloadAllBtn = document.getElementById('download-all-btn');
+  let currentGallerySlug = null;
+  let currentGalleryParsed = null;
 
   async function loadEventList(){
     eventList.style.display = 'flex';
     photoGrid.style.display = 'none';
     manageBack.style.display = 'none';
+    downloadAllBtn.style.display = 'none';
+    currentGallerySlug = null;
+    currentGalleryParsed = null;
     stateMsg.textContent = '';
     eventList.innerHTML = '';
 
@@ -505,8 +573,13 @@
           <h3>${parsed.name}</h3>
           <div class="meta">${[formatDate(parsed.date), parsed.city].filter(Boolean).join(' · ')}</div>
         </div>
+        <button class="quick-download-btn">Download All</button>
       `;
       row.addEventListener('click', () => loadPhotoPicker(folder.name, parsed));
+      row.querySelector('.quick-download-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadAllPhotos(folder.name, parsed, e.target);
+      });
       eventList.appendChild(row);
     }
   }
@@ -516,13 +589,18 @@
     photoGrid.style.display = 'grid';
     manageBack.style.display = 'inline-block';
     manageBack.onclick = loadEventList;
+    currentGallerySlug = slug;
+    currentGalleryParsed = parsed;
     stateMsg.textContent = '';
     photoGrid.innerHTML = '';
 
     const { data, error } = await sb.storage.from(BUCKET).list(slug, { limit: 200, sortBy: { column: 'created_at', order: 'desc' } });
-    if(error){ stateMsg.textContent = "Couldn't load this gallery's photos right now."; return; }
+    if(error){ stateMsg.textContent = "Couldn't load this gallery's photos right now."; downloadAllBtn.style.display = 'none'; return; }
     const files = (data || []).filter(f => f.id !== null);
-    if(files.length === 0){ stateMsg.textContent = "No photos in this gallery yet."; return; }
+    if(files.length === 0){ stateMsg.textContent = "No photos in this gallery yet."; downloadAllBtn.style.display = 'none'; return; }
+
+    downloadAllBtn.style.display = 'inline-block';
+    downloadAllBtn.textContent = `Download All Photos (${files.length})`;
 
     files.forEach(file => {
       const isCover = file.name.toLowerCase().startsWith('cover-');
@@ -543,6 +621,59 @@
       photoGrid.appendChild(tile);
     });
   }
+
+  // Zips up every photo in a gallery and downloads it as one file — used by both
+  // the "Download All Photos" button inside a gallery and the quick "Download All"
+  // button on each row in the gallery list, so King can pull Shawn's uploads down
+  // to his own computer for backup without opening the Supabase dashboard.
+  async function downloadAllPhotos(slug, parsed, triggerEl){
+    const originalLabel = triggerEl.textContent;
+    triggerEl.disabled = true;
+    try {
+      triggerEl.textContent = 'Preparing...';
+      const { data, error } = await sb.storage.from(BUCKET).list(slug, { limit: 500 });
+      if(error) throw error;
+      const files = (data || []).filter(f => f.id !== null);
+      if(files.length === 0){
+        showToast('No photos in this gallery yet');
+        return;
+      }
+
+      const zip = new JSZip();
+      for(let i = 0; i < files.length; i++){
+        const file = files[i];
+        triggerEl.textContent = `Zipping ${i + 1} of ${files.length}...`;
+        const url = sb.storage.from(BUCKET).getPublicUrl(`${slug}/${file.name}`).data.publicUrl;
+        const res = await fetch(url);
+        const blob = await res.blob();
+        zip.file(file.name.replace(/^cover-/i, ''), blob);
+      }
+
+      triggerEl.textContent = 'Building zip...';
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipName = `${slugify(parsed.name || slug)}-photos.zip`;
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = zipUrl;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(zipUrl);
+      showToast(`Downloaded ${files.length} photos`);
+    } catch(err){
+      console.error('Download all failed:', err);
+      showToast('Something went wrong building the zip — try again');
+    } finally {
+      triggerEl.disabled = false;
+      triggerEl.textContent = originalLabel;
+    }
+  }
+
+  downloadAllBtn.addEventListener('click', () => {
+    if(!currentGallerySlug) return;
+    downloadAllPhotos(currentGallerySlug, currentGalleryParsed, downloadAllBtn);
+  });
 
   async function setCover(slug, newCoverName, allFiles){
     try {
