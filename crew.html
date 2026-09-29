@@ -665,21 +665,50 @@
     deleteSelectedBtn.disabled = selectedPhotos.size === 0;
   });
 
+  // Deletes a list of storage paths in small batches instead of one big call —
+  // large single remove() calls are what failed before. Continues past a failed
+  // batch instead of stopping, and returns exactly what happened so the caller
+  // can show a real error message instead of a generic one.
+  const DELETE_BATCH_SIZE = 25;
+
+  async function batchDeletePhotos(paths, onProgress){
+    let deletedCount = 0;
+    let lastError = null;
+    for(let i = 0; i < paths.length; i += DELETE_BATCH_SIZE){
+      const batch = paths.slice(i, i + DELETE_BATCH_SIZE);
+      if(onProgress) onProgress(Math.min(i + DELETE_BATCH_SIZE, paths.length), paths.length);
+      const { data, error } = await sb.storage.from(BUCKET).remove(batch);
+      if(error){
+        console.error('Batch delete failed:', error);
+        lastError = error;
+        continue; // keep going — one bad batch shouldn't block the rest
+      }
+      deletedCount += (data ? data.length : batch.length);
+    }
+    return { deletedCount, lastError };
+  }
+
   deleteSelectedBtn.addEventListener('click', async () => {
     if(selectedPhotos.size === 0) return;
     if(!confirm(`Permanently delete ${selectedPhotos.size} photo(s) from this gallery? This can't be undone.`)) return;
     deleteSelectedBtn.disabled = true;
-    deleteSelectedBtn.textContent = 'Deleting...';
     try {
       const paths = Array.from(selectedPhotos).map(name => `${currentGallerySlug}/${name}`);
-      const { error } = await sb.storage.from(BUCKET).remove(paths);
-      if(error) throw error;
-      showToast(`Deleted ${paths.length} photo(s)`);
+      const { deletedCount, lastError } = await batchDeletePhotos(paths, (done, total) => {
+        deleteSelectedBtn.textContent = `Deleting ${done}/${total}...`;
+      });
+      if(deletedCount === 0 && lastError){
+        showToast(`Delete failed: ${lastError.message || 'permission denied — check bucket policies'}`);
+        deleteSelectedBtn.disabled = false;
+        deleteSelectedBtn.textContent = `Delete Selected (${selectedPhotos.size})`;
+        return;
+      }
+      showToast(lastError ? `Deleted ${deletedCount} — some failed, try again` : `Deleted ${deletedCount} photo(s)`);
       exitSelectMode();
       loadPhotoPicker(currentGallerySlug, currentGalleryParsed);
     } catch(err){
       console.error('Delete selected failed:', err);
-      showToast('Something went wrong deleting those — try again');
+      showToast(`Something went wrong: ${err.message || 'unknown error'}`);
       deleteSelectedBtn.disabled = false;
       deleteSelectedBtn.textContent = `Delete Selected (${selectedPhotos.size})`;
     }
@@ -692,16 +721,20 @@
     if(!confirm(`Delete ALL ${count} photos in "${galleryLabel}"? This can't be undone.`)) return;
     if(!confirm(`Just to be sure — this permanently removes ${count} photos from Supabase Storage, not just this screen. Continue?`)) return;
     deleteAllBtn.disabled = true;
-    deleteAllBtn.textContent = 'Deleting...';
     try {
       const paths = currentGalleryFiles.map(f => `${currentGallerySlug}/${f.name}`);
-      const { error } = await sb.storage.from(BUCKET).remove(paths);
-      if(error) throw error;
-      showToast(`Deleted ${count} photos`);
+      const { deletedCount, lastError } = await batchDeletePhotos(paths, (done, total) => {
+        deleteAllBtn.textContent = `Deleting ${done}/${total}...`;
+      });
+      if(deletedCount === 0 && lastError){
+        showToast(`Delete failed: ${lastError.message || 'permission denied — check bucket policies'}`);
+        return;
+      }
+      showToast(lastError ? `Deleted ${deletedCount} — some failed, try Delete All again` : `Deleted ${deletedCount} photos`);
       loadPhotoPicker(currentGallerySlug, currentGalleryParsed);
     } catch(err){
       console.error('Delete all failed:', err);
-      showToast('Something went wrong deleting photos — try again');
+      showToast(`Something went wrong: ${err.message || 'unknown error'}`);
     } finally {
       deleteAllBtn.disabled = false;
       deleteAllBtn.textContent = 'Delete All';
