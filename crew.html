@@ -102,6 +102,23 @@
   }
   .quick-download-btn:hover{ background:var(--blush); border-color:var(--jade); color:var(--jade-deep); }
   .compress-note{ font-size:0.75rem; color:rgba(42,36,32,0.5); margin:-10px 0 20px; }
+  .manage-toolbar-group{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .select-mode-btn{
+    background:none; border:1px solid var(--line); color:rgba(42,36,32,0.6);
+    padding:11px 18px; font-size:0.72rem;
+  }
+  .select-mode-btn:hover{ background:var(--blush); border-color:var(--jade); color:var(--jade-deep); }
+  .danger-btn{
+    background:none; border:1px solid var(--rose); color:var(--rose);
+    padding:11px 18px; font-size:0.72rem;
+  }
+  .danger-btn:hover{ background:var(--rose); color:var(--opal); }
+  .danger-btn:disabled{ opacity:0.5; cursor:default; background:none; color:var(--rose); }
+  .ghost-btn{
+    background:none; border:1px solid var(--line); color:rgba(42,36,32,0.6);
+    padding:11px 18px; font-size:0.72rem;
+  }
+  .ghost-btn:hover{ background:var(--blush); border-color:var(--jade); color:var(--jade-deep); }
   .event-list{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
   .event-row{
     display:flex; align-items:center; gap:20px; padding:20px 0;
@@ -129,6 +146,16 @@
   }
   .photo-tile:hover .set-cover-btn{ opacity:1; }
   .photo-tile.is-cover .set-cover-btn{ display:none; }
+  .photo-tile .select-check{
+    position:absolute; top:8px; right:8px; width:24px; height:24px; z-index:3;
+    accent-color:var(--rose); cursor:pointer; display:none;
+  }
+  .photo-grid.select-mode .photo-tile .select-check{ display:block; }
+  .photo-grid.select-mode .photo-tile .set-cover-btn{ display:none; }
+  .photo-tile.selected{ border-color:var(--rose); }
+  .photo-tile.selected::after{
+    content:''; position:absolute; inset:0; background:rgba(162,85,90,0.22); pointer-events:none;
+  }
 
   .state-msg{ text-align:center; padding:60px 24px; color:rgba(42,36,32,0.55); font-size:0.9rem; }
   .toast{
@@ -240,7 +267,16 @@
     <div class="tab-panel" id="tab-manage">
       <div class="manage-toolbar">
         <div class="manage-back" id="manage-back" style="display:none;">← All Galleries</div>
-        <button class="download-all-btn" id="download-all-btn" style="display:none;">Download All Photos</button>
+        <div class="manage-toolbar-group" id="manage-toolbar-group" style="display:none;">
+          <button class="download-all-btn" id="download-all-btn">Download All Photos</button>
+          <button class="select-mode-btn" id="select-mode-btn">Select Photos</button>
+          <button class="danger-btn" id="delete-all-btn">Delete All</button>
+        </div>
+        <div class="manage-toolbar-group" id="manage-select-group" style="display:none;">
+          <button class="ghost-btn" id="select-all-btn">Select All</button>
+          <button class="danger-btn" id="delete-selected-btn" disabled>Delete Selected (0)</button>
+          <button class="ghost-btn" id="cancel-select-btn">Cancel</button>
+        </div>
       </div>
       <div id="event-list" class="event-list"></div>
       <div id="photo-grid" class="photo-grid"></div>
@@ -541,16 +577,28 @@
   const photoGrid = document.getElementById('photo-grid');
   const stateMsg = document.getElementById('state-msg');
   const downloadAllBtn = document.getElementById('download-all-btn');
+  const manageToolbarGroup = document.getElementById('manage-toolbar-group');
+  const manageSelectGroup = document.getElementById('manage-select-group');
+  const selectModeBtn = document.getElementById('select-mode-btn');
+  const deleteAllBtn = document.getElementById('delete-all-btn');
+  const selectAllBtn = document.getElementById('select-all-btn');
+  const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+  const cancelSelectBtn = document.getElementById('cancel-select-btn');
   let currentGallerySlug = null;
   let currentGalleryParsed = null;
+  let currentGalleryFiles = [];
+  let selectedPhotos = new Set();
 
   async function loadEventList(){
     eventList.style.display = 'flex';
     photoGrid.style.display = 'none';
     manageBack.style.display = 'none';
-    downloadAllBtn.style.display = 'none';
+    manageToolbarGroup.style.display = 'none';
+    manageSelectGroup.style.display = 'none';
     currentGallerySlug = null;
     currentGalleryParsed = null;
+    currentGalleryFiles = [];
+    selectedPhotos.clear();
     stateMsg.textContent = '';
     eventList.innerHTML = '';
 
@@ -584,6 +632,82 @@
     }
   }
 
+  function exitSelectMode(){
+    selectedPhotos.clear();
+    photoGrid.classList.remove('select-mode');
+    photoGrid.querySelectorAll('.photo-tile').forEach(t => t.classList.remove('selected'));
+    photoGrid.querySelectorAll('.select-check').forEach(c => { c.checked = false; });
+    manageToolbarGroup.style.display = 'flex';
+    manageSelectGroup.style.display = 'none';
+    deleteSelectedBtn.textContent = 'Delete Selected (0)';
+    deleteSelectedBtn.disabled = true;
+  }
+
+  selectModeBtn.addEventListener('click', () => {
+    manageToolbarGroup.style.display = 'none';
+    manageSelectGroup.style.display = 'flex';
+    photoGrid.classList.add('select-mode');
+  });
+
+  cancelSelectBtn.addEventListener('click', exitSelectMode);
+
+  selectAllBtn.addEventListener('click', () => {
+    const allSelected = selectedPhotos.size === currentGalleryFiles.length;
+    photoGrid.querySelectorAll('.photo-tile').forEach(tile => {
+      const checkbox = tile.querySelector('.select-check');
+      const filename = checkbox.dataset.filename;
+      checkbox.checked = !allSelected;
+      tile.classList.toggle('selected', !allSelected);
+      if(!allSelected) selectedPhotos.add(filename); else selectedPhotos.delete(filename);
+    });
+    selectAllBtn.textContent = allSelected ? 'Select All' : 'Deselect All';
+    deleteSelectedBtn.textContent = `Delete Selected (${selectedPhotos.size})`;
+    deleteSelectedBtn.disabled = selectedPhotos.size === 0;
+  });
+
+  deleteSelectedBtn.addEventListener('click', async () => {
+    if(selectedPhotos.size === 0) return;
+    if(!confirm(`Permanently delete ${selectedPhotos.size} photo(s) from this gallery? This can't be undone.`)) return;
+    deleteSelectedBtn.disabled = true;
+    deleteSelectedBtn.textContent = 'Deleting...';
+    try {
+      const paths = Array.from(selectedPhotos).map(name => `${currentGallerySlug}/${name}`);
+      const { error } = await sb.storage.from(BUCKET).remove(paths);
+      if(error) throw error;
+      showToast(`Deleted ${paths.length} photo(s)`);
+      exitSelectMode();
+      loadPhotoPicker(currentGallerySlug, currentGalleryParsed);
+    } catch(err){
+      console.error('Delete selected failed:', err);
+      showToast('Something went wrong deleting those — try again');
+      deleteSelectedBtn.disabled = false;
+      deleteSelectedBtn.textContent = `Delete Selected (${selectedPhotos.size})`;
+    }
+  });
+
+  deleteAllBtn.addEventListener('click', async () => {
+    if(!currentGallerySlug || currentGalleryFiles.length === 0) return;
+    const count = currentGalleryFiles.length;
+    const galleryLabel = (currentGalleryParsed && currentGalleryParsed.name) || currentGallerySlug;
+    if(!confirm(`Delete ALL ${count} photos in "${galleryLabel}"? This can't be undone.`)) return;
+    if(!confirm(`Just to be sure — this permanently removes ${count} photos from Supabase Storage, not just this screen. Continue?`)) return;
+    deleteAllBtn.disabled = true;
+    deleteAllBtn.textContent = 'Deleting...';
+    try {
+      const paths = currentGalleryFiles.map(f => `${currentGallerySlug}/${f.name}`);
+      const { error } = await sb.storage.from(BUCKET).remove(paths);
+      if(error) throw error;
+      showToast(`Deleted ${count} photos`);
+      loadPhotoPicker(currentGallerySlug, currentGalleryParsed);
+    } catch(err){
+      console.error('Delete all failed:', err);
+      showToast('Something went wrong deleting photos — try again');
+    } finally {
+      deleteAllBtn.disabled = false;
+      deleteAllBtn.textContent = 'Delete All';
+    }
+  });
+
   async function loadPhotoPicker(slug, parsed){
     eventList.style.display = 'none';
     photoGrid.style.display = 'grid';
@@ -591,15 +715,20 @@
     manageBack.onclick = loadEventList;
     currentGallerySlug = slug;
     currentGalleryParsed = parsed;
+    selectedPhotos.clear();
+    photoGrid.classList.remove('select-mode');
+    manageSelectGroup.style.display = 'none';
+    selectAllBtn.textContent = 'Select All';
     stateMsg.textContent = '';
     photoGrid.innerHTML = '';
 
     const { data, error } = await sb.storage.from(BUCKET).list(slug, { limit: 200, sortBy: { column: 'created_at', order: 'desc' } });
-    if(error){ stateMsg.textContent = "Couldn't load this gallery's photos right now."; downloadAllBtn.style.display = 'none'; return; }
+    if(error){ stateMsg.textContent = "Couldn't load this gallery's photos right now."; manageToolbarGroup.style.display = 'none'; return; }
     const files = (data || []).filter(f => f.id !== null);
-    if(files.length === 0){ stateMsg.textContent = "No photos in this gallery yet."; downloadAllBtn.style.display = 'none'; return; }
+    currentGalleryFiles = files;
+    if(files.length === 0){ stateMsg.textContent = "No photos in this gallery yet."; manageToolbarGroup.style.display = 'none'; return; }
 
-    downloadAllBtn.style.display = 'inline-block';
+    manageToolbarGroup.style.display = 'flex';
     downloadAllBtn.textContent = `Download All Photos (${files.length})`;
 
     files.forEach(file => {
@@ -609,10 +738,25 @@
       const tile = document.createElement('div');
       tile.className = 'photo-tile' + (isCover ? ' is-cover' : '');
       tile.innerHTML = `
+        <input type="checkbox" class="select-check" data-filename="${file.name}">
         <img src="${url}" alt="">
         ${isCover ? '<span class="cover-badge">Featured</span>' : ''}
         <button class="set-cover-btn">Set as Cover</button>
       `;
+      tile.querySelector('.select-check').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const filename = e.target.dataset.filename;
+        if(e.target.checked){
+          selectedPhotos.add(filename);
+          tile.classList.add('selected');
+        } else {
+          selectedPhotos.delete(filename);
+          tile.classList.remove('selected');
+        }
+        deleteSelectedBtn.textContent = `Delete Selected (${selectedPhotos.size})`;
+        deleteSelectedBtn.disabled = selectedPhotos.size === 0;
+        selectAllBtn.textContent = selectedPhotos.size === currentGalleryFiles.length ? 'Deselect All' : 'Select All';
+      });
       tile.querySelector('.set-cover-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
         await setCover(slug, file.name, files);
